@@ -1,4 +1,4 @@
-﻿namespace Flycatcher.Models
+﻿namespace Flycatcher.Models.Database
 {
     public class Channel
     {

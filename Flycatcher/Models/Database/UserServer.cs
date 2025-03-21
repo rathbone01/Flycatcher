@@ -2,7 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Flycatcher.Models
+namespace Flycatcher.Models.Database
 {
     [PrimaryKey(nameof(UserId), nameof(ServerId))]
     public class UserServer

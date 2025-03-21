@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Flycatcher.Models
+namespace Flycatcher.Models.Database
 {
     public class Message
     {

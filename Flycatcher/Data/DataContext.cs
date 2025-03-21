@@ -1,4 +1,4 @@
-﻿using Flycatcher.Models;
+﻿using Flycatcher.Models.Database;
 using Microsoft.EntityFrameworkCore;
 
 namespace Flycatcher.Data

@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using static MudBlazor.CategoryTypes;
 
-namespace Flycatcher.Models
+namespace Flycatcher.Models.Database
 {
     [PrimaryKey(nameof(UserId), nameof(FriendId))]
     public class UserFriend

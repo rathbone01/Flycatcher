@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Flycatcher.Models
+namespace Flycatcher.Models.Database
 {
     public class Server
     {
@@ -9,7 +9,7 @@ namespace Flycatcher.Models
         public string Name { get; set; } = null!;
 
         // Navigation properties
-        public List<Channel>  Channels { get; set; } = null!;
+        public List<Channel> Channels { get; set; } = null!;
         public List<UserServer> UserServers { get; set; } = null!;
     }
 }
