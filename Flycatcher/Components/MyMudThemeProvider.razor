@@ -1,0 +1,24 @@
+﻿<CascadingValue Value=false Name="UsePopoverProvider">
+    <MudThemeProvider  IsDarkMode="true" Theme="MyTheme"></MudThemeProvider>
+</CascadingValue>
+
+@code {
+    public static MudTheme MyTheme => new()
+    {
+            PaletteDark = new PaletteDark()
+            {
+                Primary = "#4237A5",
+                Secondary = "#433D7A",
+                AppbarBackground = "#4237A5",
+                TextPrimary = Colors.Gray.Lighten5,
+                Background = "#1F192A",
+                DrawerBackground = "#2A2238",
+                DrawerText = Colors.Gray.Lighten5,
+                DrawerIcon = Colors.Gray.Lighten5,
+                AppbarText = Colors.Gray.Lighten5,
+                Divider = "#4237A5",
+                TableLines = "#4237A5",
+                ActionDefault = "#4237A5",
+            },
+    };
+}

@@ -1,0 +1,32 @@
+﻿@inherits LayoutComponentBase
+@using Flycatcher.Components
+
+<MyMudThemeProvider />
+<MyMudProviders />
+
+<MudLayout>
+    <MudAppBar Elevation="0">
+		<MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+        <MudSpacer />
+    </MudAppBar>
+    <MudDrawer ClipMode="DrawerClipMode.Never" Variant="@DrawerVariant.Temporary" @bind-Open="_drawerOpen" Elevation="1">
+        <MudDrawerHeader>
+            <MudText Typo="Typo.h6">Flycatcher</MudText>
+        </MudDrawerHeader>
+        <NavMenu />
+    </MudDrawer>
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="my-16 pt-16">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    bool _drawerOpen = false;
+
+    void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+}
