@@ -1,4 +1,5 @@
-﻿@inject UserService userService
+﻿@page "/register"
+@inject UserService userService
 @inject NavigationManager NavigationManager
 
 <MudContainer Class="d-flex justify-center align-center" Style="margin-top: 10vh;">
@@ -8,15 +9,15 @@
 <MudContainer Class="d-flex justify-center align-center" Style="height: 30vh;">
     <MudCard Style="width: 400px;">
         <MudCardContent>
+            <MudTextField Label="Email" @bind-Value="email" />
             <MudTextField Label="Username" @bind-Value="username" />
             <MudTextField Label="Password" @bind-Value="password" InputType="InputType.Password" />
         </MudCardContent>
         <MudCardActions Class="d-flex justify-end">
-            <MudButton Variant="Variant.Text" Color="Color.Default" OnClick="Login">Login</MudButton>
+            <MudButton Variant="Variant.Text" Color="Color.Default" OnClick="Register">Register</MudButton>
         </MudCardActions>
     </MudCard>
 </MudContainer>
-
 <MudContainer Class="d-flex justify-center align-center">
     <div>
         @if (errorMessage != string.Empty)
@@ -25,28 +26,19 @@
         }
     </div>
 </MudContainer>
-
-<div style="text-align: center; align-content: center;">
-    <MudLink Href="/register">Don't have an account? Register here</MudLink>
-</div>
-
-
 @code {
-    [Parameter]
-    public Action? OnLogin { get; set; }
-
-    string errorMessage = string.Empty;
     private string username = string.Empty;
     private string password = string.Empty;
+    private string email = string.Empty;
+    private string errorMessage = string.Empty;
 
-    private void Login()
+    private async Task Register()
     {
-        var hashedPassword = HashClass.Hash(password);
-        var result = userService.Login(username, hashedPassword);
+        var result = await userService.CreateUser(username, password, email);
         if (result.Success)
         {
             errorMessage = string.Empty;
-            OnLogin?.Invoke();
+            NavigationManager.NavigateTo("/");
         }
         else
         {
