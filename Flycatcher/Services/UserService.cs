@@ -19,24 +19,39 @@ namespace Flycatcher.Services
             this.queryableRepository = queryableRepository;
         }
 
+        public Result Login(string username, string hashedPassword)
+        {
+            var user = queryableRepository
+                .GetQueryable<User>()
+                .FirstOrDefault(u => u.Username == username);
+
+            return Login(user, hashedPassword);
+        }
+
         public Result Login(int userId, string hashedPassword)
         {
             var user = queryableRepository
                 .GetQueryable<User>()
                 .FirstOrDefault(u => u.Id == userId);
 
+            return Login(user, hashedPassword);
+        }
+
+        public Result Login(User? user, string hashedPassword)
+        {
             if (user is null)
                 return new Result(false, "User not found.");
 
             if (user.PasswordHash != hashedPassword)
                 return new Result(false, "Incorrect password");
 
-            LoggedInUserId = userId;
+            LoggedInUserId = user.Id;
             LoggedInTime = DateTime.UtcNow;
             LoggedInUsername = user.Username;
 
             return new Result(true);
         }
+
 
         public void Logout()
         {
@@ -163,7 +178,7 @@ namespace Flycatcher.Services
         public async Task CreateFriendRequest(int userId, int friendId)
         {
             //check there is not a pending request in either direction
-            if (queryableRepository.GetQueryable<FriendRequest>().Any(fr => fr.SenderId == userId && fr.ReceiverId == friendId) 
+            if (queryableRepository.GetQueryable<FriendRequest>().Any(fr => fr.SenderId == userId && fr.ReceiverId == friendId)
                 || queryableRepository.GetQueryable<FriendRequest>().Any(fr => fr.SenderId == friendId && fr.ReceiverId == userId))
                 return;
 

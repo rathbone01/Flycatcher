@@ -35,6 +35,8 @@ namespace Flycatcher
             builder.Services.AddDbContext<DataContext>(options =>
                 options.UseSqlite(cfg.GetConnectionString("DefaultConnection")));
 
+            builder.Services.AddApplicationServices();
+
             StaticWebAssetsLoader.UseStaticWebAssets(builder.Environment, builder.Configuration);
 
             var app = builder.Build();

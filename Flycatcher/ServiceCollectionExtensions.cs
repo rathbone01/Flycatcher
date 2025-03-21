@@ -9,6 +9,9 @@ namespace Flycatcher
         {
             return services
                 .AddScoped<UserService>()
+                .AddScoped<ServerService>()
+                .AddScoped<ChannelService>()
+                .AddScoped<MessageService>()
                 .AddScoped<QueryableRepository>();
         }
     }

@@ -23,6 +23,7 @@
 
   
   <ItemGroup>
+    <Folder Include="Components\Widgets\" />
     <Folder Include="Migrations\" />
   </ItemGroup>
   
