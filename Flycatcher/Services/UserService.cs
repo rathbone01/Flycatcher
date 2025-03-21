@@ -8,6 +8,7 @@ namespace Flycatcher.Services
     public class UserService
     {
         public int? LoggedInUserId { get; set; } = null;
+        public string? LoggedInUsername { get; set; } = null;
         public DateTime? LoggedInTime { get; set; }
         public bool IsLoggedIn => LoggedInUserId.HasValue;
 
@@ -32,6 +33,7 @@ namespace Flycatcher.Services
 
             LoggedInUserId = userId;
             LoggedInTime = DateTime.UtcNow;
+            LoggedInUsername = user.Username;
 
             return new Result(true);
         }
@@ -40,19 +42,10 @@ namespace Flycatcher.Services
         {
             LoggedInUserId = null;
             LoggedInTime = null;
+            LoggedInUsername = null;
         }
 
-        public User? GetLoggedInUser()
-        {
-            if (!IsLoggedIn)
-                return null;
-
-            return queryableRepository
-                .GetQueryable<User>()
-                .FirstOrDefault(u => u.Id == LoggedInUserId);
-        }
-
-        public Result CreateUser(string username, string password, string email)
+        public async Task<Result> CreateUser(string username, string password, string email)
         {
             if (queryableRepository.GetQueryable<User>().Any(u => u.Username == username))
                 return new Result(false, "Username already exists.");
@@ -77,12 +70,12 @@ namespace Flycatcher.Services
             };
 
             queryableRepository.Create(user);
-            queryableRepository.SaveChanges();
+            await queryableRepository.SaveChanges();
 
             return new Result(true);
         }
 
-        private bool IsValidPassword(string password)
+        private static bool IsValidPassword(string password)
         {
             if (string.IsNullOrWhiteSpace(password))
                 return false;
@@ -98,7 +91,7 @@ namespace Flycatcher.Services
             return hasUpper && hasLower && hasDigit && hasSpecialChar;
         }
 
-        private bool IsValidUsername(string username)
+        private static bool IsValidUsername(string username)
         {
             if (string.IsNullOrWhiteSpace(username))
                 return false;
@@ -110,7 +103,7 @@ namespace Flycatcher.Services
             return username.All(ch => char.IsLetterOrDigit(ch) || ch == '_' || ch == '.');
         }
 
-        private bool IsValidEmail(string email)
+        private static bool IsValidEmail(string email)
         {
             var trimmedEmail = email.Trim();
 
@@ -127,6 +120,102 @@ namespace Flycatcher.Services
             {
                 return false;
             }
+        }
+
+        public List<Server> GetUserServers()
+        {
+            return queryableRepository
+                .GetQueryable<UserServer>()
+                .Where(us => us.UserId == LoggedInUserId)
+                .Select(us => us.Server)
+                .ToList();
+        }
+
+        public List<User> GetUserFriends()
+        {
+            var listUser = queryableRepository
+                .GetQueryable<UserFriend>()
+                .Where(uf => uf.UserId == LoggedInUserId)
+                .Select(uf => uf.Friend)
+                .ToList();
+
+            listUser.AddRange(queryableRepository
+                .GetQueryable<UserFriend>()
+                .Where(uf => uf.FriendId == LoggedInUserId)
+                .Select(uf => uf.User)
+                .ToList());
+
+            return listUser;
+        }
+
+        public async Task CreateFriendRequest(int userId, string recipentUserName)
+        {
+            var recipentUser = queryableRepository
+                .GetQueryable<User>()
+                .FirstOrDefault(u => u.Username == recipentUserName);
+
+            if (recipentUser is null)
+                return;
+
+            await CreateFriendRequest(userId, recipentUser.Id);
+        }
+
+        public async Task CreateFriendRequest(int userId, int friendId)
+        {
+            //check there is not a pending request in either direction
+            if (queryableRepository.GetQueryable<FriendRequest>().Any(fr => fr.SenderId == userId && fr.ReceiverId == friendId) 
+                || queryableRepository.GetQueryable<FriendRequest>().Any(fr => fr.SenderId == friendId && fr.ReceiverId == userId))
+                return;
+
+            var friendRequest = new FriendRequest
+            {
+                SenderId = userId,
+                ReceiverId = friendId
+            };
+
+            queryableRepository.Create(friendRequest);
+            await queryableRepository.SaveChanges();
+        }
+
+        public List<FriendRequest> GetFriendRequests(int userId)
+        {
+            return queryableRepository
+                .GetQueryable<FriendRequest>()
+                .Where(fr => fr.ReceiverId == userId)
+                .ToList();
+        }
+
+        public async Task AcceptFriendRequest(int friendRequestId)
+        {
+            var friendRequest = queryableRepository
+                .GetQueryable<FriendRequest>()
+                .FirstOrDefault(fr => fr.Id == friendRequestId);
+
+            if (friendRequest is null)
+                return;
+
+            var userFriend = new UserFriend
+            {
+                UserId = friendRequest.SenderId,
+                FriendId = friendRequest.ReceiverId
+            };
+
+            queryableRepository.Create(userFriend);
+            queryableRepository.Delete(friendRequest);
+            await queryableRepository.SaveChanges();
+        }
+
+        public async Task RejectFriendRequest(int friendRequestId)
+        {
+            var friendRequest = queryableRepository
+                .GetQueryable<FriendRequest>()
+                .FirstOrDefault(fr => fr.Id == friendRequestId);
+
+            if (friendRequest is null)
+                return;
+
+            queryableRepository.Delete(friendRequest);
+            await queryableRepository.SaveChanges();
         }
     }
 }
