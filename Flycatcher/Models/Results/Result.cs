@@ -1,8 +1,14 @@
 ﻿namespace Flycatcher.Models.Results
 {
-    public class Result(bool success, string? errorMessage = null)
+    public class Result
     {
-        public bool Success { get; set; } = success;
-        public string? ErrorMessage { get; set; } = errorMessage;
+        public Result() { }
+        public Result(bool success, string? errorMessage = null)
+        {
+            Success = success;
+            ErrorMessage = errorMessage;
+        }
+        public bool Success { get; set; }
+        public string? ErrorMessage { get; set; }
     }
 }

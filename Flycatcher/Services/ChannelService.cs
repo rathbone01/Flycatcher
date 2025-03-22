@@ -41,5 +41,12 @@ namespace Flycatcher.Services
 
             return new Result(true);
         }
+
+        public string GetChannelName(int channelId)
+        {
+            return queryableRepository
+                .GetQueryable<Channel>()
+                .FirstOrDefault(c => c.Id == channelId)?.Name ?? "Error Loading Channel Name";
+        }
     }
 }

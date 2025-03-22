@@ -1,0 +1,69 @@
+﻿@inject UserStateService userStateService
+@inject ServerService serverService
+@inject ChannelService channelService
+@inject MessageService messageService
+
+<MudDrawer Open="true" ClipMode="DrawerClipMode.Always" Variant="DrawerVariant.Persistent">
+    <MudDrawerHeader>
+        <MudText Typo="Typo.h6">@serverService.GetServerName((int)userStateService.selectedServerId!)</MudText>
+    </MudDrawerHeader>
+    <MudNavMenu Style="display: flex; flex-direction: column;">
+        <div style="justify-content: center; text-align: center;">
+            <MudButton Style="width: 70%;" Variant="Variant.Filled" OnClick="CreateChannel">Create Channel</MudButton>
+            <br />
+            <br />
+        </div>
+        @foreach (var channel in serverService.GetServerChannels((int)userStateService.selectedServerId!))
+        {
+            @if (channel.Id == userStateService.selectedChannelId)
+            {
+                <MudButton Color="Color.Primary" Variant="Variant.Text">@channel.Name</MudButton>
+                continue;
+            }
+
+            <MudButton Variant="Variant.Text" OnClick="() => SelectChannel(channel.Id)">@channel.Name</MudButton>
+        }
+    </MudNavMenu>
+</MudDrawer>
+
+<MudMainContent>
+    <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge">
+        @if (userStateService.selectedChannelId is not null)
+        {
+            <ChannelWidget @key=userStateService.selectedChannelId/>
+        }
+    </MudContainer>
+</MudMainContent>
+
+<MudDrawer Open="true" ClipMode="DrawerClipMode.Always" Anchor="Anchor.Right">
+    <div style="justify-content: center; text-align: center;">
+        <MudText Typo="Typo.h6">Users</MudText>
+    </div>
+    <MudList ReadOnly="true" T="string">
+        @foreach (var user in serverService.GetServerUsers((int)userStateService.selectedServerId!))
+        {
+            if (user.Id == serverService.GetServerOwnerUserId((int)userStateService.selectedServerId!))
+            {
+                <MudListItem Icon="@Icons.Material.Filled.Star" Text="@user.Username" />
+                continue;
+            }
+            <MudListItem Text="@user.Username" />
+        }
+    </MudList>
+</MudDrawer>
+
+@code {
+    private string messageContent = string.Empty;
+
+    private async Task SelectChannel(int channelId)
+    {
+        userStateService.selectedChannelId = channelId;
+        StateHasChanged();
+    }
+
+    private async Task CreateChannel()
+    {
+        await channelService.CreateChannel("Channel Name", (int)userStateService.selectedServerId!);
+        StateHasChanged();
+    }
+}

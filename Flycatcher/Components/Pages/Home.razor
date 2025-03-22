@@ -1,34 +1,89 @@
 ﻿@page "/"
 @inject UserService userService
+@inject ServerService serverService
+@inject ChannelService channelService
+@inject MessageService messageService
+@inject UserStateService userStateService
 
-@if (!userService.IsLoggedIn)
+@if (userStateService.loggedInUserId is null)
 {
-    <LoginPage OnLogin="() => InvokeAsync(StateHasChanged)" />
+    <LoginPage OnLogin="OnLoginSuccess" />
     return;
 }
 
-
 <MudAppBar Elevation="0">
-		<MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
-        <MudSpacer />
-    </MudAppBar>
-    <MudDrawer ClipMode="DrawerClipMode.Never" Variant="@DrawerVariant.Temporary" @bind-Open="_drawerOpen" Elevation="1">
-        <MudDrawerHeader>
-            <MudText Typo="Typo.h6">Flycatcher</MudText>
-        </MudDrawerHeader>
-        <NavMenu />
-    </MudDrawer>
-    <MudMainContent>
-        <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="my-16 pt-16">
-            
-        </MudContainer>
-    </MudMainContent>
+    <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+    <MudSpacer />
+</MudAppBar>
+<MudDrawer ClipMode="DrawerClipMode.Never" Variant="@DrawerVariant.Temporary" @bind-Open="_drawerOpen" Elevation="1">
+    <MudDrawerHeader>
+        <MudText Typo="Typo.h6">flycatcher.chat</MudText>
+    </MudDrawerHeader>
+    <MudNavMenu Style="display: flex; flex-direction: column;">
+        <div style="justify-content: center; text-align: center;">
+            <MudButton Style="width: 70%" Variant="Variant.Filled" OnClick="GoHome">Home</MudButton>
+            <br />
+            <br />
+        </div>
+         <div style="justify-content: center; text-align: center;">
+            <MudButton Style="width: 70%" Variant="Variant.Filled" OnClick="CreateServer">Create Server</MudButton>
+            <br />
+            <br />
+        </div>
+        
+        @foreach (var server in userService.GetUserServers((int)userStateService.loggedInUserId!))
+        {
+            @if (server.Id == userStateService.selectedServerId)
+            {
+                <MudButton Variant="Variant.Text" Color="Color.Primary">@server.Name</MudButton>
+                continue;
+            }
+
+            <MudButton Variant="Variant.Text" OnClick="() => SelectServer(server.Id)">@server.Name</MudButton>
+        }
+    </MudNavMenu>
+</MudDrawer>
+
+@if (userStateService.selectedServerId is not null)
+{
+    <ServerWidget @key=userStateService.selectedServerId/>
+    return;
+}
+
+<HomeWidget />
 
 @code {
     bool _drawerOpen = false;
 
-    void DrawerToggle()
+    private void OnLoginSuccess(int userId)
+    {
+        userStateService.loggedInUserId = userId;
+    }
+
+    private void DrawerToggle()
     {
         _drawerOpen = !_drawerOpen;
+    }
+
+    private async Task CreateServer()
+    {
+        await serverService.CreateServer("Server Name", (int)userStateService.loggedInUserId!);
+        StateHasChanged();
+    }
+
+    private async Task SelectServer(int serverId)
+    {
+        userStateService.selectedServerId = serverId;
+        userStateService.selectedChannelId = null;
+        _drawerOpen = false;
+        StateHasChanged();
+    }
+
+    private void GoHome()
+    {
+        userStateService.selectedServerId = null;
+        userStateService.selectedChannelId = null;
+        _drawerOpen = false;
+        StateHasChanged();
     }
 }

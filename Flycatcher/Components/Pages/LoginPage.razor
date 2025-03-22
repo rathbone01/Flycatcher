@@ -33,7 +33,7 @@
 
 @code {
     [Parameter]
-    public Action? OnLogin { get; set; }
+    public EventCallback<int> OnLogin { get; set; }
 
     string errorMessage = string.Empty;
     private string username = string.Empty;
@@ -43,10 +43,10 @@
     {
         var hashedPassword = HashClass.Hash(password);
         var result = userService.Login(username, hashedPassword);
-        if (result.Success)
+        if (result.Success && result.UserId is not null)
         {
             errorMessage = string.Empty;
-            OnLogin?.Invoke();
+            OnLogin.InvokeAsync((int)result.UserId);
         }
         else
         {

@@ -7,11 +7,6 @@ namespace Flycatcher.Services
 {
     public class UserService
     {
-        public int? LoggedInUserId { get; set; } = null;
-        public string? LoggedInUsername { get; set; } = null;
-        public DateTime? LoggedInTime { get; set; }
-        public bool IsLoggedIn => LoggedInUserId.HasValue;
-
         private readonly QueryableRepository queryableRepository;
 
         public UserService(QueryableRepository queryableRepository)
@@ -19,7 +14,7 @@ namespace Flycatcher.Services
             this.queryableRepository = queryableRepository;
         }
 
-        public Result Login(string username, string hashedPassword)
+        public LoginResult Login(string username, string hashedPassword)
         {
             var user = queryableRepository
                 .GetQueryable<User>()
@@ -28,7 +23,7 @@ namespace Flycatcher.Services
             return Login(user, hashedPassword);
         }
 
-        public Result Login(int userId, string hashedPassword)
+        public LoginResult Login(int userId, string hashedPassword)
         {
             var user = queryableRepository
                 .GetQueryable<User>()
@@ -37,27 +32,15 @@ namespace Flycatcher.Services
             return Login(user, hashedPassword);
         }
 
-        public Result Login(User? user, string hashedPassword)
+        public LoginResult Login(User? user, string hashedPassword)
         {
             if (user is null)
-                return new Result(false, "User not found.");
+                return new LoginResult(false, "User not found.");
 
             if (user.PasswordHash != hashedPassword)
-                return new Result(false, "Incorrect password");
+                return new LoginResult(false, "Incorrect password");
 
-            LoggedInUserId = user.Id;
-            LoggedInTime = DateTime.UtcNow;
-            LoggedInUsername = user.Username;
-
-            return new Result(true);
-        }
-
-
-        public void Logout()
-        {
-            LoggedInUserId = null;
-            LoggedInTime = null;
-            LoggedInUsername = null;
+            return new LoginResult(user.Id);
         }
 
         public async Task<Result> CreateUser(string username, string password, string email)
@@ -137,26 +120,28 @@ namespace Flycatcher.Services
             }
         }
 
-        public List<Server> GetUserServers()
+        public List<Server> GetUserServers(int userId)
         {
-            return queryableRepository
+            var servers = queryableRepository
                 .GetQueryable<UserServer>()
-                .Where(us => us.UserId == LoggedInUserId)
+                .Where(us => us.UserId == userId)
                 .Select(us => us.Server)
                 .ToList();
+
+            return servers;
         }
 
-        public List<User> GetUserFriends()
+        public List<User> GetUserFriends(int userId)
         {
             var listUser = queryableRepository
                 .GetQueryable<UserFriend>()
-                .Where(uf => uf.UserId == LoggedInUserId)
+                .Where(uf => uf.UserId == userId)
                 .Select(uf => uf.Friend)
                 .ToList();
 
             listUser.AddRange(queryableRepository
                 .GetQueryable<UserFriend>()
-                .Where(uf => uf.FriendId == LoggedInUserId)
+                .Where(uf => uf.FriendId == userId)
                 .Select(uf => uf.User)
                 .ToList());
 

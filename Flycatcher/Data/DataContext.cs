@@ -42,5 +42,6 @@ namespace Flycatcher.Data
         public DbSet<UserServer> UserServers { get; set; }
         public DbSet<Server> Servers { get; set; }
         public DbSet<Message> Messages { get; set; }
+        public DbSet<ServerInvite> ServerInvites { get; set; }
     }
 }

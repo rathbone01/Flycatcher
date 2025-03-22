@@ -16,11 +16,18 @@ namespace Flycatcher.Services
             this.queryableRepository = queryableRepository;
         }
 
+        public int GetChannelMessagesCount(int channelId)
+        {
+            return queryableRepository
+                .GetQueryable<Message>()
+                .Count(m => m.ChannelId == channelId);
+        }
+
         public List<Message> GetChannelMessages(int channelId, int page)
         {
             return queryableRepository
                 .GetQueryable<Message>()
-                .OrderBy(m => m.Timestamp)
+                .OrderByDescending(m => m.Timestamp)
                 .Where(m => m.ChannelId == channelId)
                 .Include(m => m.User)
                 .Skip(page * 100)
