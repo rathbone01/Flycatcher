@@ -13,7 +13,8 @@ namespace Flycatcher
                 .AddScoped<ChannelService>()
                 .AddScoped<MessageService>()
                 .AddScoped<UserStateService>()
-                .AddScoped<QueryableRepository>();
+                .AddScoped<QueryableRepository>()
+                .AddScoped<ServerInviteService>();
         }
     }
 }

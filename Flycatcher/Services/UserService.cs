@@ -2,6 +2,7 @@
 using Flycatcher.Models.Database;
 using Flycatcher.Models.Results;
 using Flycatcher.Repositories;
+using Microsoft.EntityFrameworkCore;
 
 namespace Flycatcher.Services
 {
@@ -12,6 +13,28 @@ namespace Flycatcher.Services
         public UserService(QueryableRepository queryableRepository)
         {
             this.queryableRepository = queryableRepository;
+        }
+
+        public string GetUsername(int userId)
+        {
+            return queryableRepository
+                .GetQueryable<User>()
+                .FirstOrDefault(u => u.Id == userId)
+                ?.Username ?? "Unknown";
+        }
+
+        public User? GetUser(int userId)
+        {
+            return queryableRepository
+                .GetQueryable<User>()
+                .FirstOrDefault(u => u.Id == userId);
+        }
+
+        public User? GetUser(string username)
+        {
+            return queryableRepository
+                .GetQueryable<User>()
+                .FirstOrDefault(u => u.Username == username);
         }
 
         public LoginResult Login(string username, string hashedPassword)
@@ -68,7 +91,7 @@ namespace Flycatcher.Services
             };
 
             queryableRepository.Create(user);
-            await queryableRepository.SaveChanges();
+            await queryableRepository.SaveChangesAsync();
 
             return new Result(true);
         }
@@ -148,16 +171,27 @@ namespace Flycatcher.Services
             return listUser;
         }
 
-        public async Task CreateFriendRequest(int userId, string recipentUserName)
+        public async Task<Result> CreateFriendRequest(int userId, string recipentUserName)
         {
             var recipentUser = queryableRepository
                 .GetQueryable<User>()
                 .FirstOrDefault(u => u.Username == recipentUserName);
 
             if (recipentUser is null)
-                return;
+                return new Result(false, "User not found.");
+
+            if (AreUsersFriends(userId, recipentUser.Id))
+                return new Result(false, "You are already friends.");
 
             await CreateFriendRequest(userId, recipentUser.Id);
+            return new Result(true);
+        }
+
+        public bool AreUsersFriends(int userId, int friendId)
+        {
+            return queryableRepository
+            .GetQueryable<UserFriend>()
+            .Any(uf => (uf.UserId == userId && uf.FriendId == friendId) || (uf.UserId == friendId && uf.FriendId == userId));
         }
 
         public async Task CreateFriendRequest(int userId, int friendId)
@@ -174,7 +208,7 @@ namespace Flycatcher.Services
             };
 
             queryableRepository.Create(friendRequest);
-            await queryableRepository.SaveChanges();
+            await queryableRepository.SaveChangesAsync();
         }
 
         public List<FriendRequest> GetFriendRequests(int userId)
@@ -182,6 +216,7 @@ namespace Flycatcher.Services
             return queryableRepository
                 .GetQueryable<FriendRequest>()
                 .Where(fr => fr.ReceiverId == userId)
+                .Include(fr => fr.Sender)
                 .ToList();
         }
 
@@ -202,7 +237,7 @@ namespace Flycatcher.Services
 
             queryableRepository.Create(userFriend);
             queryableRepository.Delete(friendRequest);
-            await queryableRepository.SaveChanges();
+            await queryableRepository.SaveChangesAsync();
         }
 
         public async Task RejectFriendRequest(int friendRequestId)
@@ -215,7 +250,29 @@ namespace Flycatcher.Services
                 return;
 
             queryableRepository.Delete(friendRequest);
-            await queryableRepository.SaveChanges();
+            await queryableRepository.SaveChangesAsync();
+        }
+
+        public async Task<Result> RemoveFriend(int userId, int friendUserId)
+        {
+            var userFriend = queryableRepository
+                .GetQueryable<UserFriend>()
+                .FirstOrDefault(uf => uf.UserId == userId && uf.FriendId == friendUserId);
+
+            if (userFriend is null)
+            {
+                userFriend = queryableRepository
+                    .GetQueryable<UserFriend>()
+                    .FirstOrDefault(uf => uf.UserId == friendUserId && uf.FriendId == userId);
+            }
+
+            if (userFriend is null)
+                return new Result(false, "Friend not found.");
+
+            queryableRepository.Delete(userFriend);
+            await queryableRepository.SaveChangesAsync();
+
+            return new Result(true);
         }
     }
 }

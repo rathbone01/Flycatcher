@@ -15,14 +15,17 @@
     <MudTextField @bind-Text="@messageContent" OnKeyUp="KeyUp" TextUpdateSuppression="false" Immediate="true" T="string" Label="Send Message" Variant="Variant.Outlined" AutoGrow MaxLines="4" Class="flex-grow-1 me-2" />
 </div>
 
-@foreach (var message in messageService.GetChannelMessages((int)userStateService.selectedChannelId!, 0))
-{
-    <MudPaper Elevation="3">
-        <MudText Style="margin-left: 10px;" Typo="Typo.body1">@message.User.Username</MudText>
-        <MudText Style="margin-left: 10px; margin-bottom: 6px;" Typo="Typo.body2">@message.Content</MudText>
-    </MudPaper>
-}
-
+<MudList Dense="true" ReadOnly="true" T="string">
+    @foreach (var message in messageService.GetChannelMessages((int)userStateService.selectedChannelId!, 0))
+    {
+        <MudListItem>
+            <MudPaper Elevation="3">
+                <MudText Style="margin-left: 10px;" Typo="Typo.body1">@message.User.Username</MudText>
+                <MudText Style="margin-left: 10px; width: 100% width: 500px; white-space: normal; word-wrap: break-word;" Typo="Typo.body2">@message.Content</MudText>
+            </MudPaper>
+        </MudListItem>
+    }
+</MudList>
 @code {
     private string messageContent = string.Empty;
     System.Timers.Timer timer = new System.Timers.Timer(1000);

@@ -1,10 +1,16 @@
 ﻿<MudMainContent>
     <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge">
-        Test 2
-        <!--Show server invites with accept or deny-->
-        <!--Show friend requests with accept or deny-->
-        <!--Show friends and let you click on a friend to chat-->
-        <!--Add DM's-->
+        <MudTabs Outlined="true">
+            <MudTabPanel Text="Friends">
+                <MudText Typo="Typo.h1">Friends</MudText>
+            </MudTabPanel>
+            <MudTabPanel Text="Requests">
+                <RequestsWidget />
+            </MudTabPanel>
+            <MudTabPanel Text="Add a Friend">
+                <AddAFriendWidget />
+            </MudTabPanel>
+        </MudTabs>
     </MudContainer>
 </MudMainContent>
 

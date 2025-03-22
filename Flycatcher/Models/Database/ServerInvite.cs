@@ -4,7 +4,7 @@
     {
         public int Id { get; set; }
         public int ServerId { get; set; }
-        public int SernderUserId { get; set; }
+        public int SenderUserId { get; set; }
         public int RecieverUserId { get; set; }
 
         // Navigation properties

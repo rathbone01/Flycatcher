@@ -57,7 +57,7 @@ namespace Flycatcher.Services
             };
 
             queryableRepository.Create(server);
-            await queryableRepository.SaveChanges();
+            await queryableRepository.SaveChangesAsync();
 
             var userServer = new UserServer
             {
@@ -66,7 +66,7 @@ namespace Flycatcher.Services
             };
 
             queryableRepository.Create(userServer);
-            await queryableRepository.SaveChanges();
+            await queryableRepository.SaveChangesAsync();
         }
 
         public async Task<Result> DeleteServer(int serverId)
@@ -79,7 +79,22 @@ namespace Flycatcher.Services
                 return new Result(false, "Server not found.");
 
             queryableRepository.Delete(server);
-            await queryableRepository.SaveChanges();
+            await queryableRepository.SaveChangesAsync();
+
+            return new Result(true);
+        }
+
+        public async Task<Result> LeaveServer(int userId, int serverId)
+        {
+            var userServer = queryableRepository
+                .GetQueryable<UserServer>()
+                .FirstOrDefault(us => us.UserId == userId && us.ServerId == serverId);
+
+            if (userServer is null)
+                return new Result(false, "User not in server.");
+
+            queryableRepository.Delete(userServer);
+            await queryableRepository.SaveChangesAsync();
 
             return new Result(true);
         }

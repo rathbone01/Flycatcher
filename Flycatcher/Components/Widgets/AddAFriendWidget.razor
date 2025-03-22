@@ -1,0 +1,42 @@
+﻿@inject UserStateService userStateService
+@inject UserService userService
+
+<MudContainer Class="d-flex justify-center align-center" Style="height: 30vh;">
+    <MudCard Style="width: 400px;">
+        <MudCardContent>
+            <MudTextField Label="Friend's Username" @bind-Value="friendUsername" />
+        </MudCardContent>
+        <MudCardActions Class="d-flex justify-end">
+            <MudButton Variant="Variant.Text" Color="Color.Default" OnClick="AddFriend">Add Friend</MudButton>
+        </MudCardActions>
+    </MudCard>
+</MudContainer>
+<MudContainer Class="d-flex justify-center align-center">
+    <div>
+        @if (errorMessage != string.Empty)
+        {
+            <MudAlert Style="width: 400px;" Severity="@alertSeverity">@errorMessage</MudAlert>
+        }
+    </div>
+</MudContainer>
+
+@code {
+    string errorMessage = string.Empty;
+    private string friendUsername = string.Empty;
+    private Severity alertSeverity = Severity.Error;
+
+    private async Task AddFriend()
+    {
+        var result = await userService.CreateFriendRequest((int)userStateService.loggedInUserId!, friendUsername);
+        if (result.Success)
+        {
+            errorMessage = "Friend Request Sent";
+            alertSeverity = Severity.Success;
+        }
+        else
+        {
+            errorMessage = result.ErrorMessage ?? "Unknown Error Occured";
+            alertSeverity = Severity.Error;
+        }
+    }
+}

@@ -24,7 +24,7 @@ namespace Flycatcher.Services
             };
 
             queryableRepository.Create(channel);
-            await queryableRepository.SaveChanges();
+            await queryableRepository.SaveChangesAsync();
         }
 
         public async Task<Result> DeleteChannel(int channelId)
@@ -37,7 +37,7 @@ namespace Flycatcher.Services
                 return new Result(false, "Channel not found.");
 
             queryableRepository.Delete(channel);
-            await queryableRepository.SaveChanges();
+            await queryableRepository.SaveChangesAsync();
 
             return new Result(true);
         }

@@ -26,7 +26,7 @@ namespace Flycatcher.Repositories
             dbContext.Update(entity);
         }
 
-        public async Task SaveChanges()
+        public async Task SaveChangesAsync()
         {
             await dbContext.SaveChangesAsync();
         }

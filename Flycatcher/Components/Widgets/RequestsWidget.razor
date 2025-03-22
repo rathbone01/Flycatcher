@@ -1,0 +1,83 @@
+﻿@inject UserService userService
+@inject UserStateService userStateService
+@inject ServerInviteService serverInviteService
+
+<MudText Typo="Typo.h5">Friend Requests</MudText>
+<MudSimpleTable Style="max-height: 40vh;">
+    <thead>
+        <tr>
+            <th>Username</th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            @foreach (var friendRequest in userService.GetFriendRequests((int)userStateService.loggedInUserId!))
+            {
+                <td>@friendRequest.Sender.Username</td>
+                <td></td>
+                <td></td>
+                <td><MudButton Color="Color.Success" OnClick="() => AcceptFriendRequest(friendRequest.Id)">Accept</MudButton></td>
+                <td>
+                    <MudButton Color="Color.Error" OnClick="() => DeclineFriendRequest(friendRequest.Id)">Decline</MudButton>
+                </td>
+            }
+        </tr>
+    </tbody>
+</MudSimpleTable>
+<br />
+<MudText Typo="Typo.h5">Server Requests</MudText>
+<MudSimpleTable Style="max-height: 40vh;">
+    <thead>
+        <tr>
+            <th>Server Name</th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            @foreach (var serverInvite in serverInviteService.GetServerInvites((int)userStateService.loggedInUserId!))
+            {
+                <td>@serverInvite.Server.Name</td>
+                <td></td>
+                <td></td>
+                <td><MudButton Color="Color.Success" OnClick="() => AcceptServerInvite(serverInvite.Id)">Accept</MudButton></td>
+                <td>
+                    <MudButton Color="Color.Error" OnClick="() => DeclineServerInvite(serverInvite.Id)">Decline</MudButton>
+                </td>
+            }
+        </tr>
+    </tbody>
+</MudSimpleTable>
+
+@code {
+    private async Task AcceptFriendRequest(int friendRequestId)
+    {
+        await userService.AcceptFriendRequest(friendRequestId);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task DeclineFriendRequest(int friendRequestId)
+    {
+        await userService.RejectFriendRequest(friendRequestId);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task AcceptServerInvite(int serverInviteId)
+    {
+        await serverInviteService.AcceptInvite(serverInviteId);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task DeclineServerInvite(int serverInviteId)
+    {
+        await serverInviteService.DeleteInvite(serverInviteId);
+        await InvokeAsync(StateHasChanged);
+    }
+}

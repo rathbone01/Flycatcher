@@ -45,7 +45,7 @@ namespace Flycatcher.Services
             };
 
             queryableRepository.Create(message);
-            await queryableRepository.SaveChanges();
+            await queryableRepository.SaveChangesAsync();
         }
 
         public async Task<Result> DeleteMessage(int messageId)
@@ -58,7 +58,7 @@ namespace Flycatcher.Services
                 return new Result(false, "Message not found.");
 
             queryableRepository.Delete(message);
-            await queryableRepository.SaveChanges();
+            await queryableRepository.SaveChangesAsync();
 
             return new Result(true);
         }
