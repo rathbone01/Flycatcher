@@ -23,15 +23,15 @@ namespace Flycatcher.Services
                 .Count(m => m.ChannelId == channelId);
         }
 
-        public List<Message> GetChannelMessages(int channelId, int page)
+        public List<Message> GetChannelMessages(int channelId, int startIndex, int count)
         {
             return queryableRepository
                 .GetQueryable<Message>()
                 .OrderByDescending(m => m.Timestamp)
                 .Where(m => m.ChannelId == channelId)
                 .Include(m => m.User)
-                .Skip(page * 100)
-                .Take(100)
+                .Skip(startIndex)
+                .Take(count)
                 .ToList();
         }
 
