@@ -78,6 +78,27 @@ namespace Flycatcher.Services
             if (server is null)
                 return new Result(false, "Server not found.");
 
+            //delete all channels, and messages in those channels
+            var channels = queryableRepository
+                .GetQueryable<Channel>()
+                .Where(c => c.ServerId == serverId)
+                .ToList();
+
+            foreach (var channel in channels)
+            {
+                var messages = queryableRepository
+                    .GetQueryable<Message>()
+                    .Where(m => m.ChannelId == channel.Id)
+                    .ToList();
+
+                foreach (var message in messages)
+                {
+                    queryableRepository.Delete(message);
+                }
+
+                queryableRepository.Delete(channel);
+            }
+
             queryableRepository.Delete(server);
             await queryableRepository.SaveChangesAsync();
 

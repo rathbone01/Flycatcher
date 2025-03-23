@@ -2,6 +2,7 @@
 using Flycatcher.Models.Database;
 using Flycatcher.Models.Results;
 using Flycatcher.Repositories;
+using Microsoft.EntityFrameworkCore;
 
 namespace Flycatcher.Services
 {
@@ -16,7 +17,11 @@ namespace Flycatcher.Services
 
         public List<ServerInvite> GetServerInvites(int userId)
         {
-            return queryableRepository.GetQueryable<ServerInvite>().Where(si => si.RecieverUserId == userId).ToList();
+            return queryableRepository
+                .GetQueryable<ServerInvite>()
+                .Where(si => si.RecieverUserId == userId)
+                .Include(si => si.Server)
+                .ToList();
         }
 
         public async Task<Result> CreateInvite(int serverId, int recieverUserId, int senderUserId)

@@ -1,0 +1,32 @@
+﻿@inject UserStateService userStateService
+@inject UserService userService
+
+<MudSimpleTable>
+    <thead>
+        <tr>
+            <th>Username</th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+
+        @foreach (var friend in userService.GetUserFriends((int)userStateService.loggedInUserId!))
+        {
+            <tr>
+                <td>@friend.Username</td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td>DM Button will be here</td>
+            </tr>
+        }
+
+    </tbody>
+</MudSimpleTable>
+
+@code {
+
+}

@@ -4,6 +4,7 @@
 @inject ChannelService channelService
 @inject MessageService messageService
 @inject UserStateService userStateService
+@inject IDialogService dialogService
 
 @if (userStateService.loggedInUserId is null)
 {
@@ -20,21 +21,13 @@
     <MudIconButton Icon="@Icons.Material.Filled.ExitToApp" Color="Color.Dark" OnClick="@(() => Logout())" />
 </MudAppBar>
 <MudDrawer ClipMode="DrawerClipMode.Never" Variant="@DrawerVariant.Temporary" @bind-Open="_drawerOpen" Elevation="1">
-    <MudDrawerHeader>
-        <MudText Typo="Typo.h6">flycatcher.chat</MudText>
-    </MudDrawerHeader>
     <MudNavMenu Style="display: flex; flex-direction: column;">
-        <div style="justify-content: center; text-align: center;">
-            <MudButton Style="width: 70%" Variant="Variant.Filled" OnClick="GoHome">Home</MudButton>
-            <br />
-            <br />
-        </div>
-         <div style="justify-content: center; text-align: center;">
+         <div style="margin-top: 20px; justify-content: center; text-align: center;">
             <MudButton Style="width: 70%" Variant="Variant.Filled" OnClick="CreateServer">Create Server</MudButton>
             <br />
             <br />
         </div>
-        
+        <MudButton Variant="Variant.Text" OnClick="GoHome">Home</MudButton>
         @foreach (var server in userService.GetUserServers((int)userStateService.loggedInUserId!))
         {
             @if (server.Id == userStateService.selectedServerId)
@@ -50,7 +43,7 @@
 
 @if (userStateService.selectedServerId is not null)
 {
-    <ServerWidget @key=userStateService.selectedServerId/>
+    <ServerWidget ServerDeletedCallback="GoHome" @key=userStateService.selectedServerId />
     return;
 }
 
@@ -71,8 +64,24 @@
 
     private async Task CreateServer()
     {
-        await serverService.CreateServer("Server Name", (int)userStateService.loggedInUserId!);
+        var serverName = await ShowServerCreationDialog();
+        if (serverName is null)
+            return;
+
+        await serverService.CreateServer(serverName, (int)userStateService.loggedInUserId!);
         StateHasChanged();
+    }
+
+    public async Task<string?> ShowServerCreationDialog()
+    {
+        var parameters = new DialogParameters();
+        parameters.Add("Title", "Choose Server Name");
+        parameters.Add("Message", "Please select a name for your new server.");
+
+        var dialog = await dialogService.ShowAsync<StringDialog>("Create Server", parameters);
+        var result = await dialog.Result;
+
+        return (string?)result?.Data ?? null;
     }
 
     private async Task SelectServer(int serverId)
