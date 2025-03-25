@@ -14,7 +14,9 @@ namespace Flycatcher
                 .AddScoped<MessageService>()
                 .AddScoped<UserStateService>()
                 .AddScoped<QueryableRepository>()
-                .AddScoped<ServerInviteService>();
+                .AddScoped<ServerInviteService>()
+                
+                .AddSingleton<CallbackService>();
         }
     }
 }

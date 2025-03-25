@@ -1,10 +1,16 @@
-﻿<MudMainContent>
+﻿@implements IDisposable
+@inject UserStateService userStateService
+@inject UserService userService
+@inject ServerInviteService serverInviteService
+@inject CallbackService callbackService
+
+<MudMainContent>
     <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge">
         <MudTabs Outlined="true">
             <MudTabPanel Text="Friends">
                 <FriendsWidget />
             </MudTabPanel>
-            <MudTabPanel Text="Requests">
+            <MudTabPanel Text="@RequestsText()">
                 <RequestsWidget />
             </MudTabPanel>
             <MudTabPanel Text="Add a Friend">
@@ -15,5 +21,35 @@
 </MudMainContent>
 
 @code {
+    private int loggedInUserId;
 
+    protected override void OnInitialized()
+    {
+        loggedInUserId = (int)userStateService.loggedInUserId!;
+        callbackService.Subscribe(CallbackType.User, loggedInUserId, UserHasUpdatedAsync);
+    }
+
+    private string RequestsText()
+    {
+        int inviteCountTotal = 0;
+        inviteCountTotal += userService.GetFriendRequestsCount((int)userStateService.loggedInUserId!);
+        inviteCountTotal += serverInviteService.GetServerInvitesCount((int)userStateService.loggedInUserId!);
+
+        if (inviteCountTotal > 0)
+        {
+            return $"Requests ({inviteCountTotal})";
+        }
+
+        return "Requests";
+    }
+
+    private async Task UserHasUpdatedAsync()
+    {
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        callbackService.Unsubscribe(CallbackType.User, loggedInUserId, UserHasUpdatedAsync);
+    }
 }

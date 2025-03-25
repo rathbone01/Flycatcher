@@ -9,10 +9,19 @@ namespace Flycatcher.Services
     public class ServerService
     {
         private readonly QueryableRepository queryableRepository;
+        private readonly CallbackService callbackService;
 
-        public ServerService(QueryableRepository queryableRepository)
+        public ServerService(QueryableRepository queryableRepository, CallbackService callbackService)
         {
             this.queryableRepository = queryableRepository;
+            this.callbackService = callbackService;
+        }
+
+        public bool DoesServerExist(int serverId)
+        {
+            return queryableRepository
+                .GetQueryable<Server>()
+                .Any(s => s.Id == serverId);
         }
 
         public int GetServerOwnerUserId(int serverId)
@@ -101,6 +110,7 @@ namespace Flycatcher.Services
 
             queryableRepository.Delete(server);
             await queryableRepository.SaveChangesAsync();
+            await callbackService.NotifyAsync(CallbackType.Server, serverId);
 
             return new Result(true);
         }

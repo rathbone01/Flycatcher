@@ -7,10 +7,11 @@
 @inject ChannelService channelService
 @inject MessageService messageService
 @inject IServiceScopeFactory serviceScopeFactory
+@inject CallbackService callbackService
 
 
 <MudText Typo="Typo.h6">
-    @channelService.GetChannelName((int)userStateService.selectedChannelId!)
+    @channelService.GetChannelName(channelId)
 </MudText>
 
 
@@ -18,14 +19,14 @@
     <MudTextField @bind-Text="@messageContent" OnKeyUp="KeyUp" TextUpdateSuppression="false" Immediate="true" T="string" Label="Send Message" Variant="Variant.Outlined" AutoGrow MaxLines="4" Class="flex-grow-1 me-2" />
 </div>
 
-<div>
-    <Virtualize Context="message" ItemsProvider="LoadMessages" @ref="virtualizeRef">
+<div tyle="width: 100%;">
+    <Virtualize Context="message" ItemsProvider="LoadMessages" @ref="virtualizeRef" OverscanCount="8">
         @if (message.Content is not null)
         {
             <MudPaper Elevation="3">
                 <MudText Style="margin-left: 10px;" Typo="Typo.body1">@message.User.Username</MudText>
-                <MudText Style="margin-left: 10px; margin-bottom: 10px; width: 98%; white-space: pre-wrap;" Typo="Typo.body2">
-                    @((MarkupString)message.Content.Replace("\r\n", "<br>").Replace("\n", "<br>"))
+                <MudText Style="margin-left: 10px; margin-bottom: 10px; width: 98%; white-space: pre-wrap; word-wrap: break-word;" Typo="Typo.body2">
+                    @message.Content.Replace("\r\n", "\n").Replace("\r", "\n")
                 </MudText>
             </MudPaper>
         }
@@ -35,35 +36,29 @@
 @code {
     private Virtualize<Message>? virtualizeRef;
     private string messageContent = string.Empty;
-    System.Timers.Timer timer = new System.Timers.Timer(1000);
     private int totalMessageCount = 0;
+    private int channelId;
 
     private ValueTask<ItemsProviderResult<Message>> LoadMessages(ItemsProviderRequest request)
     {
         using var scope = serviceScopeFactory.CreateScope();
         using var dbContext = scope.ServiceProvider.GetRequiredService<DataContext>();
         QueryableRepository scopedRepo = new QueryableRepository(dbContext);
-        MessageService messageService = new MessageService(scopedRepo);
-
-        var messages = messageService.GetChannelMessages((int)userStateService.selectedChannelId!, request.StartIndex, request.Count);
+        MessageService messageService = new MessageService(scopedRepo, callbackService);
+        var messages = messageService.GetChannelMessages(channelId, request.StartIndex, request.Count);
         return new ValueTask<ItemsProviderResult<Message>>(new ItemsProviderResult<Message>(messages, messageService.GetChannelMessagesCount((int)userStateService.selectedChannelId!)));
     }
 
     protected override void OnInitialized()
     {
-        timer.Elapsed += (_, _) =>
-        {
-            Task.Run(async () =>
-            {
-                await CheckForNewMessages();
-            });
-        };
-        timer.Start();
+        channelId = (int)userStateService.selectedChannelId!;
 
         using var scope = serviceScopeFactory.CreateScope();
         using var dbContext = scope.ServiceProvider.GetRequiredService<DataContext>();
         var queryable = dbContext.Messages.AsQueryable();
         var totalMessageCount = queryable.Count();
+
+        callbackService.Subscribe(CallbackType.Channel, channelId, GetNewMessagesAsync);
     }
 
     private async Task KeyUp(KeyboardEventArgs e)
@@ -81,38 +76,26 @@
             messageContent = string.Empty;
             return;
         }
-        
-        await messageService.CreateMessage((int)userStateService.loggedInUserId!, (int)userStateService.selectedChannelId!, messageContent.Trim());
+
+        await messageService.CreateMessage((int)userStateService.loggedInUserId!, channelId, messageContent.Trim());
         messageContent = string.Empty;
-        if (virtualizeRef != null)
-        {
-            await virtualizeRef.RefreshDataAsync();
-        }
+
         StateHasChanged();
     }
 
-    private async Task CheckForNewMessages()
+
+    private async Task GetNewMessagesAsync()
     {
-        using var scope = serviceScopeFactory.CreateScope();
-        using var dbContext = scope.ServiceProvider.GetRequiredService<DataContext>();
-        var queryable = dbContext.Messages.AsQueryable();
-
-        var newMessageCount = queryable.Count();
-        if (newMessageCount == totalMessageCount)
-            return;
-
-        totalMessageCount = newMessageCount;
         if (virtualizeRef != null)
         {
             await virtualizeRef.RefreshDataAsync();
         }
 
-        StateHasChanged();
+        await InvokeAsync(StateHasChanged);
     }
 
     public void Dispose()
     {
-        timer.Stop();
-        timer.Dispose();
+        callbackService.Unsubscribe(CallbackType.Channel, channelId, GetNewMessagesAsync);
     }
 }

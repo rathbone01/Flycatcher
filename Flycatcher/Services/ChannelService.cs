@@ -9,10 +9,12 @@ namespace Flycatcher.Services
     public class ChannelService
     {
         private readonly QueryableRepository queryableRepository;
+        private readonly CallbackService callbackService;
 
-        public ChannelService(QueryableRepository queryableRepository)
+        public ChannelService(QueryableRepository queryableRepository, CallbackService callbackService)
         {
             this.queryableRepository = queryableRepository;
+            this.callbackService = callbackService;
         }
 
         public async Task CreateChannel(string channelName, int serverId)
@@ -25,6 +27,7 @@ namespace Flycatcher.Services
 
             queryableRepository.Create(channel);
             await queryableRepository.SaveChangesAsync();
+            await callbackService.NotifyAsync(CallbackType.Server, serverId);
         }
 
         public async Task<Result> DeleteChannel(int channelId)
@@ -36,8 +39,11 @@ namespace Flycatcher.Services
             if (channel is null)
                 return new Result(false, "Channel not found.");
 
+            var serverId = channel.ServerId;
+
             queryableRepository.Delete(channel);
             await queryableRepository.SaveChangesAsync();
+            await callbackService.NotifyAsync(CallbackType.Server, serverId);
 
             return new Result(true);
         }

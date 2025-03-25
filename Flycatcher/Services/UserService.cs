@@ -9,10 +9,12 @@ namespace Flycatcher.Services
     public class UserService
     {
         private readonly QueryableRepository queryableRepository;
+        private readonly CallbackService callbackService;
 
-        public UserService(QueryableRepository queryableRepository)
+        public UserService(QueryableRepository queryableRepository, CallbackService callbackService)
         {
             this.queryableRepository = queryableRepository;
+            this.callbackService = callbackService;
         }
 
         public string GetUsername(int userId)
@@ -209,6 +211,7 @@ namespace Flycatcher.Services
 
             queryableRepository.Create(friendRequest);
             await queryableRepository.SaveChangesAsync();
+            await callbackService.NotifyAsync(CallbackType.User, friendRequest.ReceiverId);
         }
 
         public List<FriendRequest> GetFriendRequests(int userId)
@@ -218,6 +221,15 @@ namespace Flycatcher.Services
                 .Where(fr => fr.ReceiverId == userId)
                 .Include(fr => fr.Sender)
                 .ToList();
+        }
+
+        public int GetFriendRequestsCount(int userId)
+        {
+            return queryableRepository
+                .GetQueryable<FriendRequest>()
+                .Where(fr => fr.ReceiverId == userId)
+                .Include(fr => fr.Sender)
+                .Count();
         }
 
         public async Task AcceptFriendRequest(int friendRequestId)
@@ -238,6 +250,8 @@ namespace Flycatcher.Services
             queryableRepository.Create(userFriend);
             queryableRepository.Delete(friendRequest);
             await queryableRepository.SaveChangesAsync();
+            await callbackService.NotifyAsync(CallbackType.User, userFriend.UserId);
+            await callbackService.NotifyAsync(CallbackType.User, userFriend.FriendId);
         }
 
         public async Task RejectFriendRequest(int friendRequestId)
@@ -249,8 +263,11 @@ namespace Flycatcher.Services
             if (friendRequest is null)
                 return;
 
+            var receiverId = friendRequest.ReceiverId;
+
             queryableRepository.Delete(friendRequest);
             await queryableRepository.SaveChangesAsync();
+            await callbackService.NotifyAsync(CallbackType.User, receiverId);
         }
 
         public async Task<Result> RemoveFriend(int userId, int friendUserId)
@@ -272,6 +289,8 @@ namespace Flycatcher.Services
             queryableRepository.Delete(userFriend);
             await queryableRepository.SaveChangesAsync();
 
+            await callbackService.NotifyAsync(CallbackType.User, userId);
+            await callbackService.NotifyAsync(CallbackType.User, friendUserId);
             return new Result(true);
         }
     }

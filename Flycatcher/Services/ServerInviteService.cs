@@ -9,10 +9,21 @@ namespace Flycatcher.Services
     public class ServerInviteService
     {
         private readonly QueryableRepository queryableRepository;
+        private readonly CallbackService callbackService;
 
-        public ServerInviteService(QueryableRepository queryableRepository)
+        public ServerInviteService(QueryableRepository queryableRepository, CallbackService callbackService)
         {
             this.queryableRepository = queryableRepository;
+            this.callbackService = callbackService;
+        }
+
+        public int GetServerInvitesCount(int userId)
+        {
+            return queryableRepository
+                .GetQueryable<ServerInvite>()
+                .Where(si => si.RecieverUserId == userId)
+                .Include(si => si.Server)
+                .Count();
         }
 
         public List<ServerInvite> GetServerInvites(int userId)
@@ -47,6 +58,7 @@ namespace Flycatcher.Services
 
             queryableRepository.Create(invite);
             await queryableRepository.SaveChangesAsync();
+            await callbackService.NotifyAsync(CallbackType.User, recieverUserId);
 
             return new Result(true);
         }
@@ -57,8 +69,11 @@ namespace Flycatcher.Services
             if (invite is null)
                 return new Result(false, "Invite not found.");
 
+            var recieverUserId = invite.RecieverUserId;
+
             queryableRepository.Delete(invite);
             await queryableRepository.SaveChangesAsync();
+            await callbackService.NotifyAsync(CallbackType.User, recieverUserId);
 
             return new Result(true);
         }
@@ -86,6 +101,7 @@ namespace Flycatcher.Services
             queryableRepository.Create(userServer);
             queryableRepository.Delete(invite);
             await queryableRepository.SaveChangesAsync();
+            await callbackService.NotifyAsync(CallbackType.User, userServer.UserId);
 
             return new Result(true);
         }

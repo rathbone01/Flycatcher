@@ -1,4 +1,5 @@
-﻿@inject UserStateService userStateService
+﻿@implements IDisposable
+@inject UserStateService userStateService
 @inject ServerService serverService
 @inject UserService userService
 @inject ChannelService channelService
@@ -6,16 +7,14 @@
 @inject ServerInviteService serverInviteService
 @inject IDialogService dialogService
 @inject IBrowserViewportService browserViewportService
+@inject CallbackService callbackService
 
-@if (userStateService.selectedServerId is null)
+@if (userStateService.selectedServerId is null || !(serverService.DoesServerExist((int)userStateService.selectedServerId!)))
 {
-    <MudContainer>
-        <MudText Typo="Typo.h5">Select a server to view its channels</MudText>
-    </MudContainer>
+    userStateService.selectedServerId = null;
+    userStateService.selectedChannelId = null;
     return;
 }
-
-
 
 <MudDrawer Open="leftDrawerOpen" OpenChanged="LeftDrawerOpenChanged" ClipMode="DrawerClipMode.Always" Variant="DrawerVariant.Responsive">
     <MudDrawerHeader>
@@ -51,8 +50,6 @@
         }
     </MudNavMenu>
 </MudDrawer>
-
-
 <MudMainContent>
     <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge">
         <MudHidden Breakpoint="Breakpoint.SmAndDown" HiddenChanged="OnHiddenChanged" Invert="true">
@@ -93,9 +90,18 @@
     private int serverOwnerId;
     private bool leftDrawerOpen = false;
     private bool rightDrawerOpen = false;
+    private int serverId;
 
     [Parameter]
     public Action? ServerDeletedCallback { get; set; }
+
+    protected override void OnInitialized()
+    {
+        serverId = (int)userStateService.selectedServerId!;
+        serverOwnerId = serverService.GetServerOwnerUserId(serverId);
+
+        callbackService.Subscribe(CallbackType.Server, serverId, ServerHasUpdatedAsync);
+    }
 
     private void OnHiddenChanged(bool isLargeScreen)
     {
@@ -118,7 +124,6 @@
     //on parameter set override
     protected override async Task OnParametersSetAsync()
     {
-        serverOwnerId = serverService.GetServerOwnerUserId((int)userStateService.selectedServerId!);
         var browserViewport = await browserViewportService.GetCurrentBrowserWindowSizeAsync();
         if (browserViewport.Width >= 960)
         {
@@ -140,7 +145,7 @@
     private async Task SelectChannel(int channelId)
     {
         userStateService.selectedChannelId = channelId;
-        StateHasChanged();
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task CreateChannel()
@@ -150,7 +155,7 @@
             return;
 
         await channelService.CreateChannel(channelName, (int)userStateService.selectedServerId!);
-        StateHasChanged();
+        await InvokeAsync(StateHasChanged);
     }
 
     public async Task<string?> ShowChannelCreationDialog()
@@ -220,5 +225,15 @@
         var result = await dialog.Result;
 
         return (string?)result?.Data ?? null;
+    }
+
+    public async Task ServerHasUpdatedAsync()
+    {
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        callbackService.Unsubscribe(CallbackType.Server, serverId, ServerHasUpdatedAsync);
     }
 }
