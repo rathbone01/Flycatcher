@@ -44,9 +44,20 @@ jobs:
       - name: Deploy to SmarterASP.NET
         shell: pwsh
         run: |
+          # Determine msdeploy.exe path (x64 then x86)
+          $msdeployPath = Join-Path $Env:ProgramFiles 'IIS\Microsoft Web Deploy V4\msdeploy.exe'
+          if (-not (Test-Path $msdeployPath)) {
+            $msdeployPath = Join-Path $Env:'ProgramFiles(x86)' 'IIS\Microsoft Web Deploy V4\msdeploy.exe'
+          }
+          if (-not (Test-Path $msdeployPath)) {
+            Write-Error "Could not find msdeploy.exe. Checked paths: $Env:ProgramFiles and $Env:'ProgramFiles(x86)'"
+            exit 1
+          }
+          # Deploy
           $publishDir = Join-Path $Env:GITHUB_WORKSPACE 'publish'
-          & "${Env:ProgramFiles}\IIS\Microsoft Web Deploy V4\msdeploy.exe" `
-            -source:contentPath="$publishDir" `
-            -dest:contentPath=${{ secrets.DEPLOY_SITE }},ComputerName=${{ secrets.DEPLOY_URL }},UserName=${{ secrets.DEPLOY_USER }},Password=${{ secrets.DEPLOY_PASSWORD }},AuthType="Basic" `
-            -verb:sync `
+          & $msdeployPath \
+            -source:contentPath="$publishDir" \
+            -dest:contentPath=${{ secrets.DEPLOY_SITE }},ComputerName=${{ secrets.DEPLOY_URL }},UserName=${{ secrets.DEPLOY_USER }},Password=${{ secrets.DEPLOY_PASSWORD }},AuthType="Basic" \
+            -verb:sync \
             -allowUntrusted
+
