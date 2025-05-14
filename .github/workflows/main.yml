@@ -26,6 +26,15 @@ jobs:
       - name: Publish
         run: dotnet publish -c Release -o ./publish
 
+      - name: Install Web Deploy
+        run: |
+          Invoke-WebRequest -Uri "https://download.microsoft.com/download/D/D/9/DD9DB576-4E2C-4726-9B1D-A3F0D62AE8F5/WebDeploy_amd64_en-US.msi" -OutFile "webdeploy.msi"
+          Start-Process msiexec.exe -ArgumentList "/i webdeploy.msi /quiet /norestart" -Wait
+
+      - name: Check msdeploy path
+        run: Get-ChildItem "C:\Program Files\IIS\Microsoft Web Deploy V3\msdeploy.exe"
+
+
       - name: Deploy to SmarterASP.NET
         run: |
           msdeploy.exe ^
