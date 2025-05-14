@@ -1,4 +1,4 @@
-name: Build and WebDeploy to Prod
+name: Build and Deploy .NET App
 
 # Manual trigger
 on:
@@ -11,10 +11,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4                                      # checks out your repo so the workflow can access it :contentReference[oaicite:0]{index=0}
 
       - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v4                                  # sets up .NET CLI environment on the runner :contentReference[oaicite:1]{index=1}
         with:
           dotnet-version: '8.0.x'
 
@@ -25,37 +25,13 @@ jobs:
         run: dotnet build --configuration Release --no-restore
 
       - name: Publish artifact
-        run: dotnet publish -c Release -o ./publish
+        run: dotnet publish --configuration Release --output ./publish
 
-      - name: Download Web Deploy
-        shell: pwsh
-        run: |
-          Invoke-WebRequest `
-            -Uri "https://download.microsoft.com/download/b/d/8/bd882ec4-12e0-481a-9b32-0fae8e3c0b78/webdeploy_amd64_en-US.msi" `
-            -OutFile "webdeploy.msi"
-
-      - name: Install Web Deploy
-        shell: pwsh
-        run: |
-          Start-Process -FilePath "msiexec.exe" `
-            -ArgumentList "/i webdeploy.msi /quiet /norestart ADDLOCAL=ALL" `
-            -Wait
-
-      - name: Deploy to SmarterASP.NET
-        shell: pwsh
-        run: |
-          # Locate msdeploy.exe in Program Files or Program Files (x86)
-          $msdeployPath = Join-Path $Env:ProgramFiles 'IIS\Microsoft Web Deploy V4\msdeploy.exe'
-          $fallback = Join-Path ${Env:ProgramFiles(x86)} 'IIS\Microsoft Web Deploy V4\msdeploy.exe'
-          if (-not (Test-Path $msdeployPath)) { $msdeployPath = $fallback }
-          if (-not (Test-Path $msdeployPath)) {
-            Write-Error "Could not find msdeploy.exe. Checked both ProgramFiles and ProgramFiles(x86)."
-            exit 1
-          }
-          # Deploy
-          $publishDir = Join-Path $Env:GITHUB_WORKSPACE 'publish'
-          & $msdeployPath `
-            -source:contentPath="$publishDir" `
-            -dest:contentPath=${{ secrets.DEPLOY_SITE }},ComputerName=${{ secrets.DEPLOY_URL }},UserName=${{ secrets.DEPLOY_USER }},Password=${{ secrets.DEPLOY_PASSWORD }},AuthType="Basic" `
-            -verb:sync `
-            -allowUntrusted
+      - name: Deploy via IIS Deploy Action
+        uses: appleboy/iis-deploy@v1                                   # deploys your published folder to IIS via Web Deploy :contentReference[oaicite:2]{index=2}
+        with:
+          package-path: './publish'
+          sitename: ${{ secrets.DEPLOY_SITE }}
+          username: ${{ secrets.DEPLOY_USER }}
+          password: ${{ secrets.DEPLOY_PASSWORD }}
+          url:      ${{ secrets.DEPLOY_URL }}
