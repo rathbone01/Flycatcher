@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Flycatcher.Classes\Flycatcher.Classes.csproj" />
+    <ProjectReference Include="..\Flycatcher.DataAccess\Flycatcher.DataAccess.csproj" />
+    <ProjectReference Include="..\Flycatcher.Models\Flycatcher.Models.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Interfaces\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.JSInterop" Version="8.0.12" />
+  </ItemGroup>
+
+</Project>

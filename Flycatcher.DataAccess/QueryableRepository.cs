@@ -1,6 +1,4 @@
-﻿using Flycatcher.Data;
-
-namespace Flycatcher.Repositories
+﻿namespace Flycatcher.DataAccess
 {
     public class QueryableRepository(DataContext dbContext)
     {

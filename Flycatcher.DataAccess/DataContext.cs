@@ -1,7 +1,7 @@
 ﻿using Flycatcher.Models.Database;
 using Microsoft.EntityFrameworkCore;
 
-namespace Flycatcher.Data
+namespace Flycatcher.DataAccess
 {
     public class DataContext : DbContext
     {
@@ -31,7 +31,6 @@ namespace Flycatcher.Data
                 .WithMany()
                 .HasForeignKey(uf => uf.FriendId)
                 .OnDelete(DeleteBehavior.Restrict);
-
 
             base.OnModelCreating(modelBuilder);
         }
