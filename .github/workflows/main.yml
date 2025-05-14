@@ -44,8 +44,9 @@ jobs:
       - name: Deploy to SmarterASP.NET
         shell: pwsh
         run: |
-          & "${env:ProgramFiles}\IIS\Microsoft Web Deploy V4\msdeploy.exe" `
-            -source:contentPath="$(System.DefaultWorkingDirectory)\publish" `
+          $publishDir = Join-Path $Env:GITHUB_WORKSPACE 'publish'
+          & "${Env:ProgramFiles}\IIS\Microsoft Web Deploy V4\msdeploy.exe" `
+            -source:contentPath="$publishDir" `
             -dest:contentPath=${{ secrets.DEPLOY_SITE }},ComputerName=${{ secrets.DEPLOY_URL }},UserName=${{ secrets.DEPLOY_USER }},Password=${{ secrets.DEPLOY_PASSWORD }},AuthType="Basic" `
             -verb:sync `
             -allowUntrusted
