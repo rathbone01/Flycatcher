@@ -1,0 +1,36 @@
+name: CD Build and Deploy
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: windows-latest
+    environment: prod  # requires approval if you’ve configured protection on this env
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Publish artifact
+        run: dotnet publish --configuration Release --output ./publish
+
+      - name: Deploy via IIS Deploy Action
+        uses: ChristopheLav/iis-deploy@v1        # ← correct Marketplace action :contentReference[oaicite:1]{index=1}
+        with:
+          website-name: ${{ secrets.DEPLOY_SITE }}           # map your IIS site name
+          msdeploy-service-url: ${{ secrets.DEPLOY_URL }}    # e.g. 'https://yourserver:8172/msdeploy.axd'
+          msdeploy-username: ${{ secrets.DEPLOY_USER }}
+          msdeploy-password: ${{ secrets.DEPLOY_PASSWORD }}
+          source-path: ${{ github.workspace }}\publish       # where your app was published
