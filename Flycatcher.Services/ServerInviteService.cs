@@ -1,7 +1,7 @@
 ﻿using Flycatcher.Classes;
+using Flycatcher.DataAccess;
 using Flycatcher.Models.Database;
 using Flycatcher.Models.Results;
-using Flycatcher.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace Flycatcher.Services
@@ -58,6 +58,7 @@ namespace Flycatcher.Services
 
             queryableRepository.Create(invite);
             await queryableRepository.SaveChangesAsync();
+
             await callbackService.NotifyAsync(CallbackType.User, recieverUserId);
 
             return new Result(true);
@@ -73,6 +74,7 @@ namespace Flycatcher.Services
 
             queryableRepository.Delete(invite);
             await queryableRepository.SaveChangesAsync();
+
             await callbackService.NotifyAsync(CallbackType.User, recieverUserId);
 
             return new Result(true);
@@ -101,7 +103,9 @@ namespace Flycatcher.Services
             queryableRepository.Create(userServer);
             queryableRepository.Delete(invite);
             await queryableRepository.SaveChangesAsync();
+
             await callbackService.NotifyAsync(CallbackType.User, userServer.UserId);
+            await callbackService.NotifyAsync(CallbackType.Server, userServer.ServerId);
 
             return new Result(true);
         }

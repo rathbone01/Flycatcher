@@ -1,7 +1,7 @@
 ﻿using Flycatcher.Classes;
 using Microsoft.JSInterop;
 
-namespace LevelMonitor.Services
+namespace Flycatcher.Services
 {
     public class BrowserService
     {
