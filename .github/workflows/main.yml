@@ -1,0 +1,35 @@
+name: Build and Deploy .NET App
+
+on:
+  workflow_dispatch:  # manual trigger only
+
+jobs:
+  build-and-deploy:
+    runs-on: windows-latest
+    environment: production  # requires manual approval
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Publish
+        run: dotnet publish -c Release -o ./publish
+
+      - name: Deploy to SmarterASP.NET
+        run: |
+          msdeploy.exe ^
+            -source:contentPath="$(System.DefaultWorkingDirectory)\publish" ^
+            -dest:contentPath=${{ secrets.DEPLOY_SITE }},ComputerName=${{ secrets.DEPLOY_URL }},UserName=${{ secrets.DEPLOY_USER }},Password=${{ secrets.DEPLOY_PASSWORD }},AuthType="Basic" ^
+            -verb:sync ^
+            -allowUntrusted
