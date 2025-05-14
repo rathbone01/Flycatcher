@@ -34,4 +34,4 @@ jobs:
           msdeploy-username: ${{ secrets.DEPLOY_USER }}
           msdeploy-password: ${{ secrets.DEPLOY_PASSWORD }}
           source-path: ${{ github.workspace }}\publish       # where your app was published
-          skip-extra-files: $false
+          skip-extra-files: $true
