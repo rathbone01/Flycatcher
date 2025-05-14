@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Flycatcher.Services
+﻿namespace Flycatcher.Services
 {
     public enum CallbackType
     {

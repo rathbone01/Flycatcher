@@ -1,5 +1,6 @@
 ﻿using Flycatcher.Classes;
 using Flycatcher.DataAccess;
+using Flycatcher.DataAccess.Interfaces;
 using Flycatcher.Models.Database;
 using Flycatcher.Models.Results;
 using Microsoft.EntityFrameworkCore;
@@ -10,10 +11,10 @@ namespace Flycatcher.Services
 
     public class MessageService
     {
-        private readonly QueryableRepository queryableRepository;
-        CallbackService callbackService;
+        private readonly IQueryableRepository queryableRepository;
+        readonly CallbackService callbackService;
 
-        public MessageService(QueryableRepository queryableRepository, CallbackService callbackService)
+        public MessageService(IQueryableRepository queryableRepository, CallbackService callbackService)
         {
             this.queryableRepository = queryableRepository;
             this.callbackService = callbackService;
