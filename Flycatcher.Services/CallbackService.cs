@@ -14,7 +14,6 @@ namespace Flycatcher.Services
         // Dictionary to hold the callback functions
         private readonly Dictionary<(CallbackType type, int id), List<Func<Task>>> _callbacks = new();
 
-        // Subscribe to a callback for a specific type (channel or server) and id
         public void Subscribe(CallbackType type, int id, Func<Task> callback)
         {
             var key = (type, id);
@@ -26,7 +25,6 @@ namespace Flycatcher.Services
             callbacks.Add(callback);
         }
 
-        // Unsubscribe from a callback for a specific type (channel or server) and id
         public void Unsubscribe(CallbackType type, int id, Func<Task> callback)
         {
             var key = (type, id);
@@ -40,7 +38,6 @@ namespace Flycatcher.Services
             }
         }
 
-        // Notify all subscribers for a specific type (channel or server) and id
         public async Task NotifyAsync(CallbackType type, int id)
         {
             var key = (type, id);
