@@ -1,6 +1,8 @@
-﻿namespace Flycatcher.DataAccess
+﻿using Flycatcher.DataAccess.Interfaces;
+
+namespace Flycatcher.DataAccess
 {
-    public class QueryableRepository(DataContext dbContext)
+    public class QueryableRepository(DataContext dbContext) : IQueryableRepository
     {
         private readonly DataContext dbContext = dbContext;
 
