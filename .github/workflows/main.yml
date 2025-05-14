@@ -6,7 +6,7 @@ on:
 jobs:
   build-and-deploy:
     runs-on: windows-latest
-    environment: production  # requires manual approval
+    environment: prod  # requires manual approval
 
     steps:
       - name: Checkout code
