@@ -1,4 +1,5 @@
 ﻿using Flycatcher.DataAccess;
+using Flycatcher.DataAccess.Interfaces;
 using Flycatcher.Services;
 
 namespace Flycatcher
@@ -13,7 +14,7 @@ namespace Flycatcher
                 .AddScoped<ChannelService>()
                 .AddScoped<MessageService>()
                 .AddScoped<UserStateService>()
-                .AddScoped<QueryableRepository>()
+                .AddScoped<IQueryableRepository, QueryableRepository>()
                 .AddScoped<ServerInviteService>()
                 
                 .AddSingleton<CallbackService>();
