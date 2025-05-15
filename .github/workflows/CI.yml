@@ -43,11 +43,13 @@ jobs:
         git commit -m "Bump version to $MAJOR.$MINOR.$NEW_BUILD"
 
     - name: Configure Git for pushing
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
       run: |
         git config user.name "GitHub Actions"
         git config user.email "actions@github.com"
 
     - name: Push changes
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
       env:
         TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
