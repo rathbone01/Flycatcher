@@ -1,4 +1,5 @@
 ﻿@page "/"
+@using System.Reflection
 @inject UserService userService
 @inject ServerService serverService
 @inject ChannelService channelService
@@ -8,6 +9,7 @@
 
 @if (userStateService.loggedInUserId is null)
 {
+    <p>@GetVersion()</p>
     <LoginPage OnLogin="OnLoginSuccess" />
     return;
 }
@@ -22,7 +24,7 @@
 </MudAppBar>
 <MudDrawer ClipMode="DrawerClipMode.Never" Variant="@DrawerVariant.Temporary" @bind-Open="_drawerOpen" Elevation="1">
     <MudNavMenu Style="display: flex; flex-direction: column;">
-         <div style="margin-top: 20px; justify-content: center; text-align: center;">
+        <div style="margin-top: 20px; justify-content: center; text-align: center;">
             <MudButton Style="width: 70%" Variant="Variant.Filled" OnClick="CreateServer">Create Server</MudButton>
             <br />
             <br />
@@ -51,6 +53,13 @@
 
 @code {
     bool _drawerOpen = false;
+
+    private string GetVersion()
+    {
+        return Assembly.GetExecutingAssembly()
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+            ?.InformationalVersion ?? "Unknown Version";
+    }
 
     private void OnLoginSuccess(int userId)
     {
