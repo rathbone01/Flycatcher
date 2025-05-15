@@ -50,9 +50,9 @@ jobs:
     - name: Push changes
       env:
         TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          git remote set-url origin https://x-access-token:${TOKEN}@github.com/${{ github.repository }}
-          git push        
+      run: |
+        git remote set-url origin https://x-access-token:${TOKEN}@github.com/${{ github.repository }}
+        git push        
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
