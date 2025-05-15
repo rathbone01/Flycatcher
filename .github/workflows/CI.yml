@@ -56,6 +56,7 @@ jobs:
         git remote set-url origin https://x-access-token:${TOKEN}@github.com/${{ github.repository }}
         git push        
 
+
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
