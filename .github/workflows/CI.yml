@@ -41,7 +41,18 @@ jobs:
         git config user.email "actions@github.com"
         git add VERSION
         git commit -m "Bump version to $MAJOR.$MINOR.$NEW_BUILD"
-        git push
+
+    - name: Configure Git for pushing
+      run: |
+        git config user.name "GitHub Actions"
+        git config user.email "actions@github.com"
+
+    - name: Push changes
+      env:
+        TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git remote set-url origin https://x-access-token:${TOKEN}@github.com/${{ github.repository }}
+          git push        
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
