@@ -23,7 +23,7 @@ jobs:
       run: dotnet restore
 
     - name: Build
-      run: dotnet build --no-restore -p:Version=${{ env.MAJOR }}.${{ env.MINOR }}.${{ github.run_number }}
+      run: dotnet build --no-restore -p:Version=0.0.${{ github.run_number }}
 
     - name: Test
       run: dotnet test --no-build --verbosity normal
