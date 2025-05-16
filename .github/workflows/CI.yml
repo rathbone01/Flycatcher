@@ -14,49 +14,6 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Read version file
-      id: version
-      run: |
-        source VERSION
-        echo "MAJOR=$MAJOR" >> $GITHUB_ENV
-        echo "MINOR=$MINOR" >> $GITHUB_ENV
-        echo "BUILD=$BUILD" >> $GITHUB_ENV
-        echo "VERSION=$MAJOR.$MINOR.$BUILD" >> $GITHUB_ENV
-
-    - name: Increment BUILD number on main branch
-      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-      run: |
-        source VERSION
-        NEW_BUILD=$((BUILD + 1))
-        echo "MAJOR=$MAJOR" > VERSION
-        echo "MINOR=$MINOR" >> VERSION
-        echo "BUILD=$NEW_BUILD" >> VERSION
-
-        echo "VERSION=$MAJOR.$MINOR.$NEW_BUILD" >> $GITHUB_ENV
-
-        git config user.name "GitHub Actions"
-        git config user.email "actions@github.com"
-
-        # Create a new branch for the version bump
-        git checkout -b version-bump-${{ github.run_number }}
-
-        git add VERSION
-        git commit -m "Bump version to $MAJOR.$MINOR.$NEW_BUILD"
-
-        git push --set-upstream origin version-bump-${{ github.run_number }}
-
-    - name: Create Pull Request for version bump
-      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-      uses: peter-evans/create-pull-request@v5
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        commit-message: "Bump version to ${{ env.VERSION }}"
-        branch: version-bump-${{ github.run_number }}
-        base: main
-        title: "Automated version bump to ${{ env.VERSION }}"
-        body: |
-          This pull request was created automatically by GitHub Actions to bump the version number.
-
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
@@ -66,7 +23,7 @@ jobs:
       run: dotnet restore
 
     - name: Build
-      run: dotnet build --no-restore -p:Version=${{ env.VERSION }}
+      run: dotnet build --no-restore -p:Version=0.0.${{ github.run_number }}
 
     - name: Test
       run: dotnet test --no-build --verbosity normal
