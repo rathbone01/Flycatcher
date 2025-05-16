@@ -21,7 +21,7 @@ jobs:
         run: dotnet restore
 
       - name: Build
-        run: dotnet build --configuration Release --no-restore
+        run: dotnet build --configuration Release --no-restore -p:Version=0.0.${{ github.run_number }}
 
       - name: Publish artifact
         run: dotnet publish --configuration Release --output ./publish
