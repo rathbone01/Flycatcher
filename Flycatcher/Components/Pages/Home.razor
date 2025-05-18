@@ -9,6 +9,7 @@
 
 @if (userStateService.loggedInUserId is null)
 {
+    <p>@GetInformationalVersion()</p>
     <p>@GetVersion()</p>
     <LoginPage OnLogin="OnLoginSuccess" />
     return;
@@ -54,11 +55,16 @@
 @code {
     bool _drawerOpen = false;
 
-    private string GetVersion()
+    private string GetInformationalVersion()
     {
         return Assembly.GetExecutingAssembly()
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
             ?.InformationalVersion ?? "Unknown Version";
+    }
+
+    private string GetVersion()
+    {
+        return Assembly.GetExecutingAssembly().GetName().Version!.ToString();
     }
 
     private void OnLoginSuccess(int userId)
