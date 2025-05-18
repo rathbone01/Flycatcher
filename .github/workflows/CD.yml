@@ -24,7 +24,7 @@ jobs:
         run: dotnet build Flycatcher.sln --configuration Release --no-restore -p:Version=0.0.${{ github.run_number }}
 
       - name: Publish artifact
-        run: dotnet publish Flycatcher.sln --configuration Release --no-restore --no-build -p:Version=0.0.${{ github.run_number }} --output ./publish
+        run: dotnet publish --configuration Release --no-restore --no-build -p:Version=0.0.${{ github.run_number }} --output ./publish
 
       - name: Deploy via IIS Deploy Action
         uses: ChristopheLav/iis-deploy@v1        # ← correct Marketplace action :contentReference[oaicite:1]{index=1}
