@@ -8,6 +8,7 @@ namespace Flycatcher.Models.Database
         public string Username { get; set; } = null!;
         public string PasswordHash { get; set; } = null!;
         public string Email { get; set; } = null!;
+        public DateTime CreatedAtUtc { get; set; } = DateTime.MinValue;
 
         // Navigation properties
         public List<UserServer> UserServers { get; set; } = null!;

@@ -40,6 +40,15 @@ namespace Flycatcher.Services
                 .FirstOrDefault(u => u.Username == username);
         }
 
+        public async Task<bool> IsUserSiteAdmin(int userId)
+        {
+            var siteAdmin = await queryableRepository
+                .GetQueryable<SiteAdmin>()
+                .FirstOrDefaultAsync(sa => sa.UserId == userId);
+
+            return siteAdmin != null;
+        }
+
         public LoginResult Login(string username, string hashedPassword)
         {
             var user = queryableRepository
@@ -90,7 +99,8 @@ namespace Flycatcher.Services
             {
                 Username = username,
                 PasswordHash = HashClass.Hash(password),
-                Email = email.Trim().ToLower()
+                Email = email.Trim().ToLower(),
+                CreatedAtUtc = DateTime.UtcNow
             };
 
             queryableRepository.Create(user);
@@ -294,5 +304,7 @@ namespace Flycatcher.Services
             await callbackService.NotifyAsync(CallbackType.User, friendUserId);
             return new Result(true);
         }
+
+
     }
 }
