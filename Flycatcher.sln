@@ -9,13 +9,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Flycatcher.Services", "Flyc
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Flycatcher.DataAccess", "Flycatcher.DataAccess\Flycatcher.DataAccess.csproj", "{8CD54EA0-BDDD-4735-8743-93E5E0E47DFB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Flycatcher.Models", "Flycatcher.Models\Flycatcher.Models.csproj", "{D8073654-3463-499E-8CD1-AE7012A434A7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Flycatcher.Models", "Flycatcher.Models\Flycatcher.Models.csproj", "{D8073654-3463-499E-8CD1-AE7012A434A7}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{9E0C7335-FB8D-483B-80B5-9C5A4D7E4379}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Flycatcher.Tests", "Flycatcher.Tests\Flycatcher.Tests.csproj", "{7A2855E5-8D6F-441A-A012-B14072B39C7A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Flycatcher.Tests", "Flycatcher.Tests\Flycatcher.Tests.csproj", "{7A2855E5-8D6F-441A-A012-B14072B39C7A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Flycatcher.Classes", "Flycatcher.Classes\Flycatcher.Classes.csproj", "{90B18B98-6A6A-4382-9498-AA1FEC37A187}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Flycatcher.Classes", "Flycatcher.Classes\Flycatcher.Classes.csproj", "{90B18B98-6A6A-4382-9498-AA1FEC37A187}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

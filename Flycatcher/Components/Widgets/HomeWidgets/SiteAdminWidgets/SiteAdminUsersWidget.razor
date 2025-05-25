@@ -1,0 +1,57 @@
+﻿@inject SiteAdminService siteAdminService
+@using Flycatcher.Models.Database
+
+<MudTable ServerData="LoadServerData"
+          RowsPerPage="25"
+          Bordered="true"
+          Hover="true"
+          Elevation="1"
+          Breakpoint="Breakpoint.Sm"
+          Loading="@_loading">
+
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Users</MudText>
+    </ToolBarContent>
+
+    <HeaderContent>
+        <!-- Add your columns here -->
+        <MudTh>Username</MudTh>
+        <MudTh>User Join Date</MudTh>
+    </HeaderContent>
+
+    <RowTemplate>
+        <MudTd DataLabel="Name">@context.Username</MudTd>
+        <MudTd DataLabel="User Join Date">@context.CreatedAtUtc.ToString("yyyy-MM-dd")</MudTd>
+    </RowTemplate>
+
+    <LoadingContent>
+        <MudText>Loading...</MudText>
+    </LoadingContent>
+
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
+
+@code {
+    private bool _loading = false;
+
+    private async Task<TableData<User>> LoadServerData(TableState state, CancellationToken token)
+    {
+        _loading = true;
+
+        var pageNumber = (state.Page + 1);
+        var pageSize = state.PageSize;
+
+        var items = await Task.Run(() => siteAdminService.GetAllUserPaged(pageSize, pageNumber));
+        var totalItems = await Task.Run(() => siteAdminService.GetAllUserCount());
+
+        _loading = false;
+
+        return new TableData<User>()
+            {
+                Items = items,
+                TotalItems = totalItems
+            };
+    }
+}

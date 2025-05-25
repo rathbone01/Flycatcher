@@ -1,9 +1,10 @@
-using Flycatcher.Components;
 using Flycatcher.DataAccess;
 using Microsoft.AspNetCore.Hosting.StaticWebAssets;
 using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
 using Serilog;
+using Flycatcher.Components;
+using Flycatcher.Configuration;
 
 namespace Flycatcher
 {
