@@ -1,9 +1,10 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace Flycatcher.Models.Database
 {
     public class FriendRequest
     {
+        [Key]
         public int Id { get; set; }
         public int SenderId { get; set; }
         public int ReceiverId { get; set; }

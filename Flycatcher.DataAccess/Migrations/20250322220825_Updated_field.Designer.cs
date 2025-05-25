@@ -3,6 +3,7 @@ using System;
 using Flycatcher.DataAccess;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,12 +11,14 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Flycatcher.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20250322220825_Updated_field")]
+    partial class Updated_field
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "9.0.5");
+            modelBuilder.HasAnnotation("ProductVersion", "9.0.2");
 
             modelBuilder.Entity("Flycatcher.Models.Database.Channel", b =>
                 {
@@ -35,27 +38,6 @@ namespace Flycatcher.Migrations
                     b.HasIndex("ServerId");
 
                     b.ToTable("Channels");
-                });
-
-            modelBuilder.Entity("Flycatcher.Models.Database.FriendRequest", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("ReceiverId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("SenderId")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ReceiverId");
-
-                    b.HasIndex("SenderId");
-
-                    b.ToTable("FriendRequests");
                 });
 
             modelBuilder.Entity("Flycatcher.Models.Database.Message", b =>
@@ -130,30 +112,11 @@ namespace Flycatcher.Migrations
                     b.ToTable("ServerInvites");
                 });
 
-            modelBuilder.Entity("Flycatcher.Models.Database.SiteAdmin", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("SiteAdmins");
-                });
-
             modelBuilder.Entity("Flycatcher.Models.Database.User", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("TEXT");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -216,25 +179,6 @@ namespace Flycatcher.Migrations
                     b.Navigation("Server");
                 });
 
-            modelBuilder.Entity("Flycatcher.Models.Database.FriendRequest", b =>
-                {
-                    b.HasOne("Flycatcher.Models.Database.User", "Receiver")
-                        .WithMany()
-                        .HasForeignKey("ReceiverId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Flycatcher.Models.Database.User", "Sender")
-                        .WithMany()
-                        .HasForeignKey("SenderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Receiver");
-
-                    b.Navigation("Sender");
-                });
-
             modelBuilder.Entity("Flycatcher.Models.Database.Message", b =>
                 {
                     b.HasOne("Flycatcher.Models.Database.Channel", "Channel")
@@ -279,17 +223,6 @@ namespace Flycatcher.Migrations
                     b.Navigation("SenderUser");
 
                     b.Navigation("Server");
-                });
-
-            modelBuilder.Entity("Flycatcher.Models.Database.SiteAdmin", b =>
-                {
-                    b.HasOne("Flycatcher.Models.Database.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Flycatcher.Models.Database.UserFriend", b =>

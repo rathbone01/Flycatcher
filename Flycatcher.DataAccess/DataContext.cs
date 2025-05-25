@@ -28,43 +28,13 @@ namespace Flycatcher.DataAccess
                 .HasOne(uf => uf.User)
                 .WithMany(u => u.UserFriends)
                 .HasForeignKey(uf => uf.UserId)
-                .OnDelete(DeleteBehavior.NoAction);
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<UserFriend>()
                 .HasOne(uf => uf.Friend)
                 .WithMany()
                 .HasForeignKey(uf => uf.FriendId)
-                .OnDelete(DeleteBehavior.NoAction);
-
-            modelBuilder.Entity<User>()
-                .HasMany(u => u.SentFriendRequests)
-                .WithOne(fr => fr.Sender)
-                .HasForeignKey(fr => fr.SenderId)
-                .OnDelete(DeleteBehavior.NoAction);
-
-            modelBuilder.Entity<User>()
-                .HasMany(u => u.ReceivedFriendRequests)
-                .WithOne(fr => fr.Receiver)
-                .HasForeignKey(fr => fr.ReceiverId)
-                .OnDelete(DeleteBehavior.NoAction);
-
-            modelBuilder.Entity<FriendRequest>()
-                .HasOne(fr => fr.Sender)
-                .WithMany(u => u.SentFriendRequests)
-                .HasForeignKey(fr => fr.SenderId)
-                .OnDelete(DeleteBehavior.NoAction);
-
-            modelBuilder.Entity<FriendRequest>()
-                .HasOne(fr => fr.Receiver)
-                .WithMany(u => u.ReceivedFriendRequests)
-                .HasForeignKey(fr => fr.ReceiverId)
-                .OnDelete(DeleteBehavior.NoAction);
-
-            modelBuilder.Entity<ServerInvite>()
-                .HasOne(si => si.SenderUser)
-                .WithMany()
-                .HasForeignKey(si => si.SenderUserId)
-                .OnDelete(DeleteBehavior.NoAction);
+                .OnDelete(DeleteBehavior.Restrict);
 
             base.OnModelCreating(modelBuilder);
         }
