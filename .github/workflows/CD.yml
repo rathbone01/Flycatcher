@@ -11,10 +11,10 @@ jobs:
     steps:
       - name: Replace placeholders in appsettings.json
         run: |
-          sed -i "s|{{DATABASE_SOURCE}}|${{ secrets.DATABASE_SOURCE }}|g" appsettings.json
-          sed -i "s|{{DATABASE_INITIAL_CATALOG}}|${{ secrets.DATABASE_INITIAL_CATALOG }}|g" appsettings.json
-          sed -i "s|{{DATABASE_USER_ID}}|${{ secrets.DATABASE_USER_ID }}|g" appsettings.json
-          sed -i "s|{{DATABASE_PASSWORD}}|${{ secrets.DATABASE_PASSWORD }}|g" appsettings.json
+          sed -i "s|{{DATABASE_SOURCE}}|${{ secrets.DATABASE_SOURCE }}|g" Flycatcher/appsettings.json
+          sed -i "s|{{DATABASE_INITIAL_CATALOG}}|${{ secrets.DATABASE_INITIAL_CATALOG }}|g" Flycatcher/appsettings.json
+          sed -i "s|{{DATABASE_USER_ID}}|${{ secrets.DATABASE_USER_ID }}|g" Flycatcher/appsettings.json
+          sed -i "s|{{DATABASE_PASSWORD}}|${{ secrets.DATABASE_PASSWORD }}|g" Flycatcher/appsettings.json
       
       - name: Checkout code
         uses: actions/checkout@v4
