@@ -8,7 +8,7 @@ namespace Flycatcher.Models.Database
         public int UserId { get; set; }
         public int ChannelId { get; set; }
         public string Content { get; set; } = null!;
-        public DateTime Timestamp { get; set; } = DateTime.Now;
+        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
 
         // Navigation properties
         public User User { get; set; } = null!;

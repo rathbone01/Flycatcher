@@ -45,7 +45,8 @@ namespace Flycatcher.Services
             {
                 UserId = userId,
                 ChannelId = channelId,
-                Content = content
+                Content = content,
+                Timestamp = DateTime.UtcNow
             };
 
             queryableRepository.Create(message);
