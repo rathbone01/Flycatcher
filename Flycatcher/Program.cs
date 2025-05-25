@@ -34,7 +34,7 @@ namespace Flycatcher
                 .Build();
 
             builder.Services.AddDbContext<DataContext>(options =>
-                options.UseSqlite(cfg.GetConnectionString("DefaultConnection")));
+                           options.UseSqlServer(cfg.GetConnectionString("DefaultConnection")));
 
             builder.Services.AddApplicationServices();
 
