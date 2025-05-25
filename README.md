@@ -10,4 +10,4 @@ My goal for flycatcher is to have fun programming an application in C# to expand
 I dunno, sure? I have never collaberated on open source projects so I am still learning how to setup branch rules and things.
 
 ## What is the next planned features?
-Moderation tools, abilty to delete messages, UI fixes, and adding unit tests.
+Moderation tools, abilty to delete and edit messages, UI fixes, and adding unit tests. Also the ability to DM friend users.
