@@ -5,6 +5,10 @@ namespace Flycatcher.DataAccess
 {
     public class DataContext : DbContext
     {
+        public DataContext()
+        {
+        }
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
 
@@ -36,6 +40,7 @@ namespace Flycatcher.DataAccess
         }
 
         public DbSet<User> Users { get; set; }
+        public DbSet<SiteAdmin> SiteAdmins { get; set; }
         public DbSet<Channel> Channels { get; set; }
         public DbSet<UserFriend> UserFriends { get; set; }
         public DbSet<UserServer> UserServers { get; set; }

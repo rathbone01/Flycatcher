@@ -15,6 +15,9 @@
 
 <div class="d-flex align-items-center" style="width: 100%;">
     <MudTextField @bind-Text="@messageContent" OnKeyUp="KeyUp" TextUpdateSuppression="false" Immediate="true" T="string" Label="Send Message" Variant="Variant.Outlined" AutoGrow MaxLines="4" Class="flex-grow-1 me-2" />
+    <MudHidden Breakpoint="Breakpoint.SmAndDown" Invert="true">
+        <MudFab OnClick="SendMessage" Style="margin-top: 12px;" Color="Color.Secondary" StartIcon="@Icons.Material.Rounded.Send" Size="Size.Medium" />
+    </MudHidden>
 </div>
 
 <div tyle="width: 100%;">
@@ -55,7 +58,6 @@
         using var scope = serviceScopeFactory.CreateScope();
         using var dbContext = scope.ServiceProvider.GetRequiredService<DataContext>();
         var queryable = dbContext.Messages.AsQueryable();
-        var totalMessageCount = queryable.Count();
         channelName = channelService.GetChannelName(channelId);
 
         callbackService.Subscribe(CallbackType.Channel, channelId, GetNewMessagesAsync);

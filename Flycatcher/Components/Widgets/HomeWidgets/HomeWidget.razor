@@ -1,4 +1,5 @@
 ﻿@implements IDisposable
+@using Flycatcher.Components.Widgets.HomeWidgets.SiteAdminWidgets
 @inject UserStateService userStateService
 @inject UserService userService
 @inject ServerInviteService serverInviteService
@@ -16,17 +17,29 @@
             <MudTabPanel Text="Add a Friend">
                 <AddAFriendWidget />
             </MudTabPanel>
+            @if (isSiteAdmin)
+            {
+                <MudTabPanel Text="Site Admin">
+                    <SiteAdminWidget/>
+                </MudTabPanel>
+            }
         </MudTabs>
     </MudContainer>
 </MudMainContent>
 
 @code {
     private int loggedInUserId;
+    private bool isSiteAdmin = false;
 
-    protected override void OnInitialized()
+    protected async override Task OnInitializedAsync()
     {
         loggedInUserId = (int)userStateService.loggedInUserId!;
         callbackService.Subscribe(CallbackType.User, loggedInUserId, UserHasUpdatedAsync);
+
+        if (userStateService.loggedInUserId is not null)
+        {
+            isSiteAdmin = await userService.IsUserSiteAdmin((int)userStateService.loggedInUserId!);
+        }
     }
 
     private string RequestsText()

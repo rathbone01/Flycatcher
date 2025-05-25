@@ -1,0 +1,56 @@
+﻿@inject SiteAdminService siteAdminService
+@using Flycatcher.Models.Database
+
+<MudTable ServerData="LoadServerData"
+          RowsPerPage="25"
+          Bordered="true"
+          Hover="true"
+          Elevation="1"
+          Breakpoint="Breakpoint.Sm"
+          Loading="@_loading">
+
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Servers</MudText>
+    </ToolBarContent>
+
+    <HeaderContent>
+        <!-- Add your columns here -->
+        <MudTh>Server Name</MudTh>
+
+    </HeaderContent>
+
+    <RowTemplate>
+        <MudTd DataLabel="Name">@context.Name</MudTd>
+    </RowTemplate>
+
+    <LoadingContent>
+        <MudText>Loading...</MudText>
+    </LoadingContent>
+
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
+
+@code {
+    private bool _loading = false;
+
+    private async Task<TableData<Server>> LoadServerData(TableState state, CancellationToken token)
+    {
+        _loading = true;
+
+        var pageNumber = (state.Page + 1);
+        var pageSize = state.PageSize;
+
+        var items = await Task.Run(() => siteAdminService.GetAllServersPaged(pageSize, pageNumber));
+        var totalItems = await Task.Run(() => siteAdminService.GetAllServersCount());
+
+        _loading = false;
+
+        return new TableData<Server>()
+            {
+                Items = items,
+                TotalItems = totalItems
+            };
+    }
+}
