@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace Flycatcher.Models.Database
+﻿namespace Flycatcher.Models.Database
 {
     public class User
     {
@@ -14,5 +12,7 @@ namespace Flycatcher.Models.Database
         public List<UserServer> UserServers { get; set; } = null!;
         public List<UserFriend> UserFriends { get; set; } = null!;
         public List<Message> Messages { get; set; } = null!;
+        public List<FriendRequest> SentFriendRequests { get; set; } = null!;
+        public List<FriendRequest> ReceivedFriendRequests { get; set; } = null!;
     }
 }

@@ -21,7 +21,7 @@
     <MudImage Fluid="false" Height="50" ObjectFit="ObjectFit.ScaleDown" ObjectPosition="ObjectPosition.Center" Src="images/mascot_small.png" />
     <MudText Typo="Typo.h6">flycatcher.chat</MudText>
     <MudSpacer />
-    <MudText Typo="Typo.h6">@userService.GetUsername((int)userStateService.loggedInUserId!)</MudText>
+    <MudText Typo="Typo.h6">@userStateService.loggedInUsername</MudText>
     <MudIconButton Icon="@Icons.Material.Filled.ExitToApp" Color="Color.Dark" OnClick="@(() => Logout())" />
 </MudAppBar>
 <MudDrawer ClipMode="DrawerClipMode.Never" Variant="@DrawerVariant.Temporary" @bind-Open="_drawerOpen" Elevation="1">
@@ -71,6 +71,8 @@
     private void OnLoginSuccess(int userId)
     {
         userStateService.loggedInUserId = userId;
+        userStateService.loggedInUsername = userService.GetUsername(userId);
+        StateHasChanged();
     }
 
     private void DrawerToggle()
@@ -119,6 +121,7 @@
 
     private void Logout()
     {
+        userStateService.loggedInUsername = null;
         userStateService.loggedInUserId = null;
         userStateService.selectedServerId = null;
         userStateService.selectedChannelId = null;
