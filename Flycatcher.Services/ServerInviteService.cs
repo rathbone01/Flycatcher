@@ -1,6 +1,4 @@
-﻿using Flycatcher.Classes;
-using Flycatcher.DataAccess;
-using Flycatcher.DataAccess.Interfaces;
+﻿using Flycatcher.DataAccess.Interfaces;
 using Flycatcher.Models.Database;
 using Flycatcher.Models.Results;
 using Microsoft.EntityFrameworkCore;
@@ -9,19 +7,25 @@ namespace Flycatcher.Services
 {
     public class ServerInviteService
     {
-        private readonly IQueryableRepository queryableRepository;
+        private readonly IQueryableRepository<ServerInvite> serverInviteQueryableRepository;
+        private readonly IQueryableRepository<Server> serverQueryableRepository;
+        private readonly IQueryableRepository<User> userQueryableRepository;
+        private readonly IQueryableRepository<UserServer> userServerQueryableRepository;
         private readonly CallbackService callbackService;
 
-        public ServerInviteService(IQueryableRepository queryableRepository, CallbackService callbackService)
+        public ServerInviteService(IQueryableRepository<ServerInvite> serverInviteQueryableRepository, IQueryableRepository<Server> serverQueryableRepository, IQueryableRepository<User> userQueryableRepository, IQueryableRepository<UserServer> userServerQueryableRepository, CallbackService callbackService)
         {
-            this.queryableRepository = queryableRepository;
+            this.serverInviteQueryableRepository = serverInviteQueryableRepository;
             this.callbackService = callbackService;
+            this.serverQueryableRepository = serverQueryableRepository;
+            this.userQueryableRepository = userQueryableRepository;
+            this.userServerQueryableRepository = userServerQueryableRepository;
         }
 
         public int GetServerInvitesCount(int userId)
         {
-            return queryableRepository
-                .GetQueryable<ServerInvite>()
+            return serverInviteQueryableRepository
+                .GetQueryable()
                 .Where(si => si.RecieverUserId == userId)
                 .Include(si => si.Server)
                 .Count();
@@ -29,8 +33,8 @@ namespace Flycatcher.Services
 
         public List<ServerInvite> GetServerInvites(int userId)
         {
-            return queryableRepository
-                .GetQueryable<ServerInvite>()
+            return serverInviteQueryableRepository
+                .GetQueryable()
                 .Where(si => si.RecieverUserId == userId)
                 .Include(si => si.Server)
                 .ToList();
@@ -38,16 +42,16 @@ namespace Flycatcher.Services
 
         public async Task<Result> CreateInvite(int serverId, int recieverUserId, int senderUserId)
         {
-            if (queryableRepository.GetQueryable<ServerInvite>().Any(si => si.ServerId == serverId && si.RecieverUserId == recieverUserId))
+            if (serverInviteQueryableRepository.GetQueryable().Any(si => si.ServerId == serverId && si.RecieverUserId == recieverUserId))
                 return new Result(false, "Invite already exists.");
 
-            if (!queryableRepository.GetQueryable<Server>().Any(s => s.Id == serverId))
+            if (!serverQueryableRepository.GetQueryable().Any(s => s.Id == serverId))
                 return new Result(false, "Server not found.");
 
-            if (!queryableRepository.GetQueryable<User>().Any(u => u.Id == recieverUserId))
+            if (!userQueryableRepository.GetQueryable().Any(u => u.Id == recieverUserId))
                 return new Result(false, "Reciever not found.");
 
-            if (!queryableRepository.GetQueryable<User>().Any(u => u.Id == senderUserId))
+            if (!userQueryableRepository.GetQueryable().Any(u => u.Id == senderUserId))
                 return new Result(false, "Sender not found.");
 
             var invite = new ServerInvite
@@ -57,9 +61,7 @@ namespace Flycatcher.Services
                 SenderUserId = senderUserId
             };
 
-            queryableRepository.Create(invite);
-            await queryableRepository.SaveChangesAsync();
-
+            await serverInviteQueryableRepository.Create(invite);
             await callbackService.NotifyAsync(CallbackType.User, recieverUserId);
 
             return new Result(true);
@@ -67,15 +69,13 @@ namespace Flycatcher.Services
 
         public async Task<Result> DeleteInvite(int serverInviteId)
         {
-            var invite = queryableRepository.GetQueryable<ServerInvite>().FirstOrDefault(si => si.Id == serverInviteId);
+            var invite = serverInviteQueryableRepository.GetQueryable().FirstOrDefault(si => si.Id == serverInviteId);
             if (invite is null)
                 return new Result(false, "Invite not found.");
 
             var recieverUserId = invite.RecieverUserId;
 
-            queryableRepository.Delete(invite);
-            await queryableRepository.SaveChangesAsync();
-
+            await serverInviteQueryableRepository.Delete(invite);
             await callbackService.NotifyAsync(CallbackType.User, recieverUserId);
 
             return new Result(true);
@@ -83,15 +83,15 @@ namespace Flycatcher.Services
 
         public async Task<Result> AcceptInvite(int serverInviteId)
         {
-            var invite = queryableRepository.GetQueryable<ServerInvite>().FirstOrDefault(si => si.Id == serverInviteId);
+            var invite = serverInviteQueryableRepository.GetQueryable().FirstOrDefault(si => si.Id == serverInviteId);
             if (invite is null)
                 return new Result(false, "Invite not found.");
 
-            var server = queryableRepository.GetQueryable<Server>().FirstOrDefault(s => s.Id == invite.ServerId);
+            var server = serverQueryableRepository.GetQueryable().FirstOrDefault(s => s.Id == invite.ServerId);
             if (server is null)
                 return new Result(false, "Server not found.");
 
-            var reciever = queryableRepository.GetQueryable<User>().FirstOrDefault(u => u.Id == invite.RecieverUserId);
+            var reciever = userQueryableRepository.GetQueryable().FirstOrDefault(u => u.Id == invite.RecieverUserId);
             if (reciever is null)
                 return new Result(false, "Reciever not found.");
 
@@ -101,9 +101,8 @@ namespace Flycatcher.Services
                 ServerId = invite.ServerId
             };
 
-            queryableRepository.Create(userServer);
-            queryableRepository.Delete(invite);
-            await queryableRepository.SaveChangesAsync();
+            await userServerQueryableRepository.Create(userServer);
+            await serverInviteQueryableRepository.Delete(invite);
 
             await callbackService.NotifyAsync(CallbackType.User, userServer.UserId);
             await callbackService.NotifyAsync(CallbackType.Server, userServer.ServerId);

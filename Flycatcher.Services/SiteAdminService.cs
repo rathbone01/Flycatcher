@@ -4,16 +4,18 @@ namespace Flycatcher.Services
 {
     public class SiteAdminService
     {
-        private readonly IQueryableRepository queryableRepository;
-        public SiteAdminService(IQueryableRepository queryableRepository)
+        private readonly IQueryableRepository<User> userQueryableRepository;
+        private readonly IQueryableRepository<Server> serverQueryableRepository;
+        public SiteAdminService(IQueryableRepository<User> userQueryableRepository, IQueryableRepository<Server> serverQueryableRepository)
         {
-            this.queryableRepository = queryableRepository;
+            this.userQueryableRepository = userQueryableRepository;
+            this.serverQueryableRepository = serverQueryableRepository;
         }
 
         public List<User> GetAllUserPaged(int pageSize, int pageNumber)
         {
-            return queryableRepository
-                .GetQueryable<User>()
+            return userQueryableRepository
+                .GetQueryable()
                 .Skip(pageSize * (pageNumber - 1))
                 .Take(pageSize)
                 .ToList();
@@ -21,15 +23,15 @@ namespace Flycatcher.Services
 
         public int GetAllUserCount()
         {
-            return queryableRepository
-                .GetQueryable<User>()
+            return userQueryableRepository
+                .GetQueryable()
                 .Count();
         }
 
         public List<Server> GetAllServersPaged(int pageSize, int pageNumber)
         {
-            return queryableRepository
-                .GetQueryable<Server>()
+            return serverQueryableRepository
+                .GetQueryable()
                 .Skip(pageSize * (pageNumber - 1))
                 .Take(pageSize)
                 .ToList();
@@ -37,8 +39,8 @@ namespace Flycatcher.Services
 
         public int GetAllServersCount()
         {
-            return queryableRepository
-                .GetQueryable<Server>()
+            return serverQueryableRepository
+                .GetQueryable()
                 .Count();
         }
     }

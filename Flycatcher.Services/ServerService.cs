@@ -1,48 +1,51 @@
-﻿using Flycatcher.Classes;
-using Flycatcher.DataAccess;
-using Flycatcher.DataAccess.Interfaces;
+﻿using Flycatcher.DataAccess.Interfaces;
 using Flycatcher.Models.Database;
 using Flycatcher.Models.Results;
-using Microsoft.EntityFrameworkCore;
 
 namespace Flycatcher.Services
 {
     public class ServerService
     {
-        private readonly IQueryableRepository queryableRepository;
+        private readonly IQueryableRepository<Server> serverQueryableRepository;
+        private readonly IQueryableRepository<UserServer> userServerQueryableRepository;
+        private readonly IQueryableRepository<Channel> channelQueryableRepository;
+        private readonly IQueryableRepository<Message> messageQueryableRepository;
         private readonly CallbackService callbackService;
 
-        public ServerService(IQueryableRepository queryableRepository, CallbackService callbackService)
+        public ServerService(IQueryableRepository<Server> serverQueryableRepository, IQueryableRepository<UserServer> userServerQueryableRepository,  CallbackService callbackService, IQueryableRepository<Channel> channelQueryableRepository, IQueryableRepository<Message> messageQueryableRepository)
         {
-            this.queryableRepository = queryableRepository;
+            this.serverQueryableRepository = serverQueryableRepository;
             this.callbackService = callbackService;
+            this.userServerQueryableRepository = userServerQueryableRepository;
+            this.channelQueryableRepository = channelQueryableRepository;
+            this.messageQueryableRepository = messageQueryableRepository;
         }
 
         public bool DoesServerExist(int serverId)
         {
-            return queryableRepository
-                .GetQueryable<Server>()
+            return serverQueryableRepository
+                .GetQueryable()
                 .Any(s => s.Id == serverId);
         }
 
         public int GetServerOwnerUserId(int serverId)
         {
-            return queryableRepository
-                .GetQueryable<Server>()
+            return serverQueryableRepository
+                .GetQueryable()
                 .FirstOrDefault(s => s.Id == serverId)?.OwnerUserId ?? -1;
         }
 
         public string GetServerName(int serverId)
         {
-            return queryableRepository
-                .GetQueryable<Server>()
+            return serverQueryableRepository
+                .GetQueryable()
                 .FirstOrDefault(s => s.Id == serverId)?.Name ?? "Error Loading Server Name";
         }
 
         public List<User> GetServerUsers(int serverId)
         {
-            return queryableRepository
-                .GetQueryable<UserServer>()
+            return userServerQueryableRepository
+                .GetQueryable()
                 .Where(us => us.ServerId == serverId)
                 .Select(us => us.User)
                 .ToList();
@@ -50,8 +53,8 @@ namespace Flycatcher.Services
 
         public List<Channel> GetServerChannels(int serverId)
         {
-            var channels = queryableRepository
-                .GetQueryable<Channel>()
+            var channels = channelQueryableRepository
+                .GetQueryable()
                 .Where(c => c.ServerId == serverId)
                 .ToList();
 
@@ -66,8 +69,7 @@ namespace Flycatcher.Services
                 OwnerUserId = ownerId
             };
 
-            queryableRepository.Create(server);
-            await queryableRepository.SaveChangesAsync();
+            await serverQueryableRepository.Create(server);
 
             var userServer = new UserServer
             {
@@ -75,42 +77,31 @@ namespace Flycatcher.Services
                 ServerId = server.Id
             };
 
-            queryableRepository.Create(userServer);
-            await queryableRepository.SaveChangesAsync();
+            await userServerQueryableRepository.Create(userServer);
         }
 
         public async Task<Result> DeleteServer(int serverId)
         {
-            var server = queryableRepository
-                .GetQueryable<Server>()
+            var server = serverQueryableRepository
+                .GetQueryable()
                 .FirstOrDefault(s => s.Id == serverId);
 
             if (server is null)
                 return new Result(false, "Server not found.");
 
             //delete all channels, and messages in those channels
-            var channels = queryableRepository
-                .GetQueryable<Channel>()
+            var channels = channelQueryableRepository
+                .GetQueryable()
                 .Where(c => c.ServerId == serverId)
                 .ToList();
 
             foreach (var channel in channels)
             {
-                var messages = queryableRepository
-                    .GetQueryable<Message>()
-                    .Where(m => m.ChannelId == channel.Id)
-                    .ToList();
-
-                foreach (var message in messages)
-                {
-                    queryableRepository.Delete(message);
-                }
-
-                queryableRepository.Delete(channel);
+                await messageQueryableRepository.ExecuteDelete(m => m.ChannelId == channel.Id);
             }
 
-            queryableRepository.Delete(server);
-            await queryableRepository.SaveChangesAsync();
+            await channelQueryableRepository.ExecuteDelete(c => c.ServerId == serverId);
+            await serverQueryableRepository.Delete(server);
             await callbackService.NotifyAsync(CallbackType.Server, serverId);
 
             return new Result(true);
@@ -118,16 +109,14 @@ namespace Flycatcher.Services
 
         public async Task<Result> LeaveServer(int userId, int serverId)
         {
-            var userServer = queryableRepository
-                .GetQueryable<UserServer>()
+            var userServer = userServerQueryableRepository
+                .GetQueryable()
                 .FirstOrDefault(us => us.UserId == userId && us.ServerId == serverId);
 
             if (userServer is null)
                 return new Result(false, "User not in server.");
 
-            queryableRepository.Delete(userServer);
-            await queryableRepository.SaveChangesAsync();
-
+            await userServerQueryableRepository.Delete(userServer);
             return new Result(true);
         }
     }

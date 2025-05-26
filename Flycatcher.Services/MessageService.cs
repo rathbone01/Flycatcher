@@ -11,26 +11,26 @@ namespace Flycatcher.Services
 
     public class MessageService
     {
-        private readonly IQueryableRepository queryableRepository;
+        private readonly IQueryableRepository<Message> messageQueryableRepository;
         readonly CallbackService callbackService;
 
-        public MessageService(IQueryableRepository queryableRepository, CallbackService callbackService)
+        public MessageService(IQueryableRepository<Message> queryableRepository, CallbackService callbackService)
         {
-            this.queryableRepository = queryableRepository;
+            this.messageQueryableRepository = queryableRepository;
             this.callbackService = callbackService;
         }
 
         public int GetChannelMessagesCount(int channelId)
         {
-            return queryableRepository
-                .GetQueryable<Message>()
+            return messageQueryableRepository
+                .GetQueryable()
                 .Count(m => m.ChannelId == channelId);
         }
 
         public List<Message> GetChannelMessages(int channelId, int startIndex, int count)
         {
-            return queryableRepository
-                .GetQueryable<Message>()
+            return messageQueryableRepository
+                .GetQueryable()
                 .OrderByDescending(m => m.Timestamp)
                 .Where(m => m.ChannelId == channelId)
                 .Include(m => m.User)
@@ -49,15 +49,14 @@ namespace Flycatcher.Services
                 Timestamp = DateTime.UtcNow
             };
 
-            queryableRepository.Create(message);
-            await queryableRepository.SaveChangesAsync();
+            await messageQueryableRepository.Create(message);
             await callbackService.NotifyAsync(CallbackType.Channel, channelId);
         }
 
         public async Task<Result> DeleteMessage(int messageId)
         {
-            var message = queryableRepository
-                .GetQueryable<Message>()
+            var message = messageQueryableRepository
+                .GetQueryable()
                 .FirstOrDefault(m => m.Id == messageId);
 
             if (message is null)
@@ -65,8 +64,7 @@ namespace Flycatcher.Services
 
             var channelId = message.ChannelId;
 
-            queryableRepository.Delete(message);
-            await queryableRepository.SaveChangesAsync();
+            await messageQueryableRepository.Delete(message);
             await callbackService.NotifyAsync(CallbackType.Channel, channelId);
 
             return new Result(true);
