@@ -9,7 +9,8 @@ namespace Flycatcher.Configuration
         public static IServiceCollection AddApplicationServices(this IServiceCollection services)
         {
             return services
-                .AddScoped<IQueryableRepository, QueryableRepository>()
+                .AddScoped<ContextFactory>()
+                .AddScoped(typeof(IQueryableRepository<>), typeof(QueryableRepository<>))
                 .AddScoped<UserService>()
                 .AddScoped<ServerService>()
                 .AddScoped<ChannelService>()

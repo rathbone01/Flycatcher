@@ -1,11 +1,29 @@
 ﻿@inject UserService userService
 @inject NavigationManager NavigationManager
 
-<MudContainer Class="d-flex justify-center align-center" Style="margin-top: 10vh;">
-    <br />
-    <MudImage Fluid="false" ObjectFit="ObjectFit.ScaleDown" ObjectPosition="ObjectPosition.Center" Src="images/mascot_small.png" />
-    <MudText Typo="Typo.h2">flycatcher.chat</MudText>
-</MudContainer>
+<!--Small Screen Greeting-->
+<MudHidden Breakpoint="Breakpoint.SmAndDown" Invert="true">
+    <MudContainer Class="d-flex flex-column align-center"
+                  Style="margin-top: 10vh;">
+
+        <MudImage Fluid="false"
+                  ObjectFit="ObjectFit.ScaleDown"
+                  ObjectPosition="ObjectPosition.Center"
+                  Src="images/mascot_small.png" />
+
+        <MudText Typo="Typo.h2" Class="mt-4">flycatcher.chat</MudText>
+    </MudContainer>
+</MudHidden>
+
+<!--Large Screen Greeting-->
+<MudHidden Breakpoint="Breakpoint.SmAndDown" Invert="false">
+    <MudContainer Class="d-flex justify-center align-center" Style="margin-top: 10vh;">
+        <br />
+        <MudImage Fluid="false" ObjectFit="ObjectFit.ScaleDown" ObjectPosition="ObjectPosition.Center" Src="images/mascot_small.png" />
+        <MudText Typo="Typo.h2">flycatcher.chat</MudText>
+    </MudContainer>
+</MudHidden>
+
 <MudContainer Class="d-flex justify-center align-center" Style="height: 30vh;">
     <MudCard Style="width: 400px;">
         <MudCardContent>

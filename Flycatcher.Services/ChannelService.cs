@@ -1,20 +1,19 @@
-﻿using Flycatcher.Classes;
-using Flycatcher.DataAccess;
-using Flycatcher.DataAccess.Interfaces;
+﻿using Flycatcher.DataAccess.Interfaces;
 using Flycatcher.Models.Database;
 using Flycatcher.Models.Results;
-using Microsoft.EntityFrameworkCore;
 
 namespace Flycatcher.Services
 {
     public class ChannelService
     {
-        private readonly IQueryableRepository queryableRepository;
+        private readonly IQueryableRepository<Channel> channelQueryableRepository;
+        private readonly IQueryableRepository<Message> messageQueryableRepository;
         private readonly CallbackService callbackService;
 
-        public ChannelService(IQueryableRepository queryableRepository, CallbackService callbackService)
+        public ChannelService(IQueryableRepository<Channel> channelQueryableRepository, IQueryableRepository<Message> messageQueryableRepository, CallbackService callbackService)
         {
-            this.queryableRepository = queryableRepository;
+            this.channelQueryableRepository = channelQueryableRepository;
+            this.messageQueryableRepository = messageQueryableRepository;
             this.callbackService = callbackService;
         }
 
@@ -26,15 +25,14 @@ namespace Flycatcher.Services
                 ServerId = serverId
             };
 
-            queryableRepository.Create(channel);
-            await queryableRepository.SaveChangesAsync();
+            await channelQueryableRepository.Create(channel);
             await callbackService.NotifyAsync(CallbackType.Server, serverId);
         }
 
         public async Task<Result> DeleteChannel(int channelId)
         {
-            var channel = queryableRepository
-                .GetQueryable<Channel>()
+            var channel = channelQueryableRepository
+                .GetQueryable()
                 .FirstOrDefault(c => c.Id == channelId);
 
             if (channel is null)
@@ -42,8 +40,11 @@ namespace Flycatcher.Services
 
             var serverId = channel.ServerId;
 
-            queryableRepository.Delete(channel);
-            await queryableRepository.SaveChangesAsync();
+            // Delete all messages in the channel
+            await messageQueryableRepository.ExecuteDelete(m => m.ChannelId == channelId);
+
+            // Delete the channel itself
+            await channelQueryableRepository.Delete(channel);
             await callbackService.NotifyAsync(CallbackType.Server, serverId);
 
             return new Result(true);
@@ -51,8 +52,8 @@ namespace Flycatcher.Services
 
         public string GetChannelName(int channelId)
         {
-            return queryableRepository
-                .GetQueryable<Channel>()
+            return channelQueryableRepository
+                .GetQueryable()
                 .FirstOrDefault(c => c.Id == channelId)?.Name ?? "Error Loading Channel Name";
         }
     }

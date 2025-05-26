@@ -1,4 +1,5 @@
-﻿@inject UserStateService userStateService
+﻿@using Flycatcher.Models.Database
+@inject UserStateService userStateService
 @inject UserService userService
 
 <MudSimpleTable>
@@ -28,5 +29,5 @@
 </MudSimpleTable>
 
 @code {
-
+    private List<User> friends = new();
 }

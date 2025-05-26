@@ -5,6 +5,7 @@ using MudBlazor.Services;
 using Serilog;
 using Flycatcher.Components;
 using Flycatcher.Configuration;
+using Flycatcher.DataAccess.Options;
 
 namespace Flycatcher
 {
@@ -27,15 +28,15 @@ namespace Flycatcher
                 .CreateLogger();
             builder.Logging.AddSerilog(logger);
 
+            var environmentName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
             var cfg = new ConfigurationBuilder()
                 .SetBasePath(builder.Environment.ContentRootPath)
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                .AddJsonFile($"appsettings.{environmentName}.json", optional: true, reloadOnChange: true)
                 .AddEnvironmentVariables()
                 .Build();
 
-            builder.Services.AddDbContext<DataContext>(options =>
-                           options.UseSqlServer(cfg.GetConnectionString("DefaultConnection")));
-
+            builder.Services.Configure<ConnectionStringOptions>(cfg.GetSection("ConnectionStrings"));
             builder.Services.AddApplicationServices();
 
             StaticWebAssetsLoader.UseStaticWebAssets(builder.Environment, builder.Configuration);
@@ -44,7 +45,8 @@ namespace Flycatcher
 
             using (var scope = app.Services.CreateScope())
             {
-                var db = scope.ServiceProvider.GetRequiredService<DataContext>();
+                var contextFactory = scope.ServiceProvider.GetRequiredService<ContextFactory>();
+                var db = contextFactory.CreateDbContext();
                 db.Database.Migrate();
             }
 

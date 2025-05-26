@@ -1,17 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Linq.Expressions;
 
 namespace Flycatcher.DataAccess.Interfaces
 {
-    public interface IQueryableRepository
+    public interface IQueryableRepository<T> where T : class
     {
-        public IQueryable<T> GetQueryable<T>() where T : class;
-        public void Create<T>(T entity) where T : class;
-        public void Delete<T>(T entity) where T : class;
-        public void Update<T>(T entity) where T : class;
-        public Task SaveChangesAsync();
+        public IQueryable<T> GetQueryable();
+        public Task<T> Create(T entity);
+        public Task Delete(T entity);
+        public Task<T> Update(T entity);
+        public Task<int> ExecuteDelete(Expression<Func<T, bool>> predicate);
     }
 }
