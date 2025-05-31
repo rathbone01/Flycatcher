@@ -1,5 +1,7 @@
 ﻿using Flycatcher.DataAccess.Interfaces;
 using Flycatcher.Models.Database;
+using Microsoft.EntityFrameworkCore;
+
 namespace Flycatcher.Services
 {
     public class SiteAdminService
@@ -12,13 +14,13 @@ namespace Flycatcher.Services
             this.serverQueryableRepository = serverQueryableRepository;
         }
 
-        public List<User> GetAllUserPaged(int pageSize, int pageNumber)
+        public async Task<List<User>> GetAllUserPaged(int pageSize, int pageNumber)
         {
-            return userQueryableRepository
+            return await userQueryableRepository
                 .GetQueryable()
                 .Skip(pageSize * (pageNumber - 1))
                 .Take(pageSize)
-                .ToList();
+                .ToListAsync();
         }
 
         public int GetAllUserCount()
@@ -28,20 +30,20 @@ namespace Flycatcher.Services
                 .Count();
         }
 
-        public List<Server> GetAllServersPaged(int pageSize, int pageNumber)
+        public async Task<List<Server>> GetAllServersPaged(int pageSize, int pageNumber)
         {
-            return serverQueryableRepository
+            return await serverQueryableRepository
                 .GetQueryable()
                 .Skip(pageSize * (pageNumber - 1))
                 .Take(pageSize)
-                .ToList();
+                .ToListAsync();
         }
 
-        public int GetAllServersCount()
+        public async Task<int> GetAllServersCount()
         {
-            return serverQueryableRepository
+            return  await serverQueryableRepository
                 .GetQueryable()
-                .Count();
+                .CountAsync();
         }
     }
 }

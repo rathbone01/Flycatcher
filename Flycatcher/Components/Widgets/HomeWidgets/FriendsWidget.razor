@@ -14,7 +14,7 @@
     </thead>
     <tbody>
 
-        @foreach (var friend in userService.GetUserFriends((int)userStateService.loggedInUserId!))
+        @foreach (var friend in friends)
         {
             <tr>
                 <td>@friend.Username</td>
@@ -30,4 +30,9 @@
 
 @code {
     private List<User> friends = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        friends = await userService.GetUserFriends((int)userStateService.loggedInUserId!);
+    }
 }

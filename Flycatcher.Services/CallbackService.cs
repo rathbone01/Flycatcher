@@ -1,12 +1,7 @@
-﻿namespace Flycatcher.Services
-{
-    public enum CallbackType
-    {
-        Channel,
-        Server,
-        User
-    }
+﻿using Flycatcher.Services.Enumerations;
 
+namespace Flycatcher.Services
+{
     public class CallbackService
     {
         // Dictionary to hold the callback functions
@@ -15,11 +10,15 @@
         public void Subscribe(CallbackType type, int id, Func<Task> callback)
         {
             var key = (type, id);
+
+            // If the key does not exist, create a new list for callbacks
             if (!_callbacks.TryGetValue(key, out var callbacks))
             {
                 callbacks = new List<Func<Task>>();
                 _callbacks[key] = callbacks;
             }
+
+            // Add the callback to the list
             callbacks.Add(callback);
         }
 
@@ -29,6 +28,8 @@
             if (_callbacks.TryGetValue(key, out var callbacks))
             {
                 callbacks.Remove(callback);
+
+                // If there are no more callbacks for this key, remove it from the dictionary
                 if (callbacks.Count == 0)
                 {
                     _callbacks.Remove(key);

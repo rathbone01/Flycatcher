@@ -3,6 +3,7 @@ using Flycatcher.DataAccess.Interfaces;
 using Flycatcher.Models.Database;
 using Flycatcher.Models.Results;
 using Microsoft.EntityFrameworkCore;
+using Flycatcher.Services.Enumerations;
 
 namespace Flycatcher.Services
 {
@@ -25,12 +26,16 @@ namespace Flycatcher.Services
             this.friendRequestQueryableRepository = friendRequestQueryableRepository;
         }
 
-        public string GetUsername(int userId)
+        public async Task<string> GetUsername(int userId)
         {
-            return userQueryableRepository
-                .GetQueryable()
-                .FirstOrDefault(u => u.Id == userId)
-                ?.Username ?? "Unknown";
+            var user = await userQueryableRepository
+                 .GetQueryable()
+                 .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user is null)
+                return string.Empty;
+
+            return user.Username;
         }
 
         public User? GetUser(int userId)
@@ -40,11 +45,11 @@ namespace Flycatcher.Services
                 .FirstOrDefault(u => u.Id == userId);
         }
 
-        public User? GetUser(string username)
+        public async Task<User?> GetUser(string username)
         {
-            return userQueryableRepository
+            return await userQueryableRepository
                 .GetQueryable()
-                .FirstOrDefault(u => u.Username == username);
+                .FirstOrDefaultAsync(u => u.Username == username);
         }
 
         public async Task<bool> IsUserSiteAdmin(int userId)
@@ -56,25 +61,16 @@ namespace Flycatcher.Services
             return siteAdmin != null;
         }
 
-        public LoginResult Login(string username, string hashedPassword)
+        public async Task<LoginResult> Login(string username, string hashedPassword)
         {
-            var user = userQueryableRepository
+            var user = await userQueryableRepository
                 .GetQueryable()
-                .FirstOrDefault(u => u.Username == username);
+                .FirstOrDefaultAsync(u => u.Username == username);
 
             return Login(user, hashedPassword);
         }
 
-        public LoginResult Login(int userId, string hashedPassword)
-        {
-            var user = userQueryableRepository
-                .GetQueryable()
-                .FirstOrDefault(u => u.Id == userId);
-
-            return Login(user, hashedPassword);
-        }
-
-        public LoginResult Login(User? user, string hashedPassword)
+        private LoginResult Login(User? user, string hashedPassword)
         {
             if (user is null)
                 return new LoginResult(false, "User not found.");
@@ -87,10 +83,10 @@ namespace Flycatcher.Services
 
         public async Task<Result> CreateUser(string username, string password, string email)
         {
-            if (userQueryableRepository.GetQueryable().Any(u => u.Username == username))
+            if (await userQueryableRepository.GetQueryable().AnyAsync(u => u.Username == username))
                 return new Result(false, "Username already exists.");
 
-            if (userQueryableRepository.GetQueryable().Any(u => u.Email == email))
+            if (await userQueryableRepository.GetQueryable().AnyAsync(u => u.Email == email))
                 return new Result(false, "Email already in use.");
 
             if (!IsValidEmail(email))
@@ -162,55 +158,55 @@ namespace Flycatcher.Services
             }
         }
 
-        public List<Server> GetUserServers(int userId)
+        public async Task<List<Server>> GetUserServers(int userId)
         {
-            var servers = userServerQueryableRepository
+            var servers = await userServerQueryableRepository
                 .GetQueryable()
                 .Where(us => us.UserId == userId)
                 .Select(us => us.Server)
-                .ToList();
+                .ToListAsync();
 
             return servers;
         }
 
-        public List<User> GetUserFriends(int userId)
+        public async Task<List<User>> GetUserFriends(int userId)
         {
-            var listUser = userFriendQueryableRepository
+            var listUser = await userFriendQueryableRepository
                 .GetQueryable()
                 .Where(uf => uf.UserId == userId)
                 .Select(uf => uf.Friend)
-                .ToList();
+                .ToListAsync();
 
-            listUser.AddRange(userFriendQueryableRepository
+            listUser.AddRange(await userFriendQueryableRepository
                 .GetQueryable()
                 .Where(uf => uf.FriendId == userId)
                 .Select(uf => uf.User)
-                .ToList());
+                .ToListAsync());
 
             return listUser;
         }
 
         public async Task<Result> CreateFriendRequest(int userId, string recipentUserName)
         {
-            var recipentUser = userQueryableRepository
+            var recipentUser = await userQueryableRepository
                 .GetQueryable()
-                .FirstOrDefault(u => u.Username == recipentUserName);
+                .FirstOrDefaultAsync(u => u.Username == recipentUserName);
 
             if (recipentUser is null)
                 return new Result(false, "User not found.");
 
-            if (AreUsersFriends(userId, recipentUser.Id))
+            if (await AreUsersFriends(userId, recipentUser.Id))
                 return new Result(false, "You are already friends.");
 
             await CreateFriendRequest(userId, recipentUser.Id);
             return new Result(true);
         }
 
-        public bool AreUsersFriends(int userId, int friendId)
+        public async Task<bool> AreUsersFriends(int userId, int friendId)
         {
-            return userFriendQueryableRepository
+            return await userFriendQueryableRepository
             .GetQueryable()
-            .Any(uf => (uf.UserId == userId && uf.FriendId == friendId) || (uf.UserId == friendId && uf.FriendId == userId));
+            .AnyAsync(uf => (uf.UserId == userId && uf.FriendId == friendId) || (uf.UserId == friendId && uf.FriendId == userId));
         }
 
         public async Task CreateFriendRequest(int userId, int friendId)
@@ -230,13 +226,13 @@ namespace Flycatcher.Services
             await callbackService.NotifyAsync(CallbackType.User, friendRequest.ReceiverId);
         }
 
-        public List<FriendRequest> GetFriendRequests(int userId)
+        public async Task<List<FriendRequest>> GetFriendRequests(int userId)
         {
-            return friendRequestQueryableRepository
+            return await friendRequestQueryableRepository
                 .GetQueryable()
                 .Where(fr => fr.ReceiverId == userId)
                 .Include(fr => fr.Sender)
-                .ToList();
+                .ToListAsync();
         }
 
         public int GetFriendRequestsCount(int userId)
@@ -250,9 +246,9 @@ namespace Flycatcher.Services
 
         public async Task AcceptFriendRequest(int friendRequestId)
         {
-            var friendRequest = friendRequestQueryableRepository
+            var friendRequest = await friendRequestQueryableRepository
                 .GetQueryable()
-                .FirstOrDefault(fr => fr.Id == friendRequestId);
+                .FirstOrDefaultAsync(fr => fr.Id == friendRequestId);
 
             if (friendRequest is null)
                 return;
@@ -272,9 +268,9 @@ namespace Flycatcher.Services
 
         public async Task RejectFriendRequest(int friendRequestId)
         {
-            var friendRequest = friendRequestQueryableRepository
+            var friendRequest = await friendRequestQueryableRepository
                 .GetQueryable()
-                .FirstOrDefault(fr => fr.Id == friendRequestId);
+                .FirstOrDefaultAsync(fr => fr.Id == friendRequestId);
 
             if (friendRequest is null)
                 return;
@@ -287,16 +283,13 @@ namespace Flycatcher.Services
 
         public async Task<Result> RemoveFriend(int userId, int friendUserId)
         {
-            var userFriend = userFriendQueryableRepository
+            var userFriend = await userFriendQueryableRepository
                 .GetQueryable()
-                .FirstOrDefault(uf => uf.UserId == userId && uf.FriendId == friendUserId);
-
-            if (userFriend is null)
-            {
-                userFriend = userFriendQueryableRepository
-                    .GetQueryable()
-                    .FirstOrDefault(uf => uf.UserId == friendUserId && uf.FriendId == userId);
-            }
+                .FirstOrDefaultAsync(uf => uf.UserId == userId && uf.FriendId == friendUserId)
+                ?? 
+                await userFriendQueryableRepository
+                .GetQueryable()
+                .FirstOrDefaultAsync(uf => uf.UserId == friendUserId && uf.FriendId == userId);
 
             if (userFriend is null)
                 return new Result(false, "Friend not found.");

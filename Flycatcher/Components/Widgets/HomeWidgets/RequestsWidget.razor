@@ -1,6 +1,8 @@
-﻿@inject UserService userService
+﻿@implements IDisposable
+@inject UserService userService
 @inject UserStateService userStateService
 @inject ServerInviteService serverInviteService
+@inject CallbackService callbackService
 
 <MudText Typo="Typo.h5">Friend Requests</MudText>
 <MudSimpleTable Style="max-height: 40vh;">
@@ -15,7 +17,7 @@
     </thead>
     <tbody>
         <tr>
-            @foreach (var friendRequest in userService.GetFriendRequests((int)userStateService.loggedInUserId!))
+            @foreach (var friendRequest in friendRequests)
             {
                 <td>@friendRequest.Sender.Username</td>
                 <td></td>
@@ -42,7 +44,7 @@
     </thead>
     <tbody>
         <tr>
-            @foreach (var serverInvite in serverInviteService.GetServerInvites((int)userStateService.loggedInUserId!))
+            @foreach (var serverInvite in serverInvites)
             {
                 <td>@serverInvite.Server.Name</td>
                 <td></td>
@@ -57,6 +59,22 @@
 </MudSimpleTable>
 
 @code {
+    private List<ServerInvite> serverInvites = new List<ServerInvite>();
+    private List<FriendRequest> friendRequests = new List<FriendRequest>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        callbackService.Subscribe(CallbackType.User, (int)userStateService.loggedInUserId!, UserHasUpdated);
+    }
+
+    private async Task UserHasUpdated()
+    {
+        serverInvites = await serverInviteService.GetServerInvites((int)userStateService.loggedInUserId!);
+        friendRequests = await userService.GetFriendRequests((int)userStateService.loggedInUserId!);
+        await InvokeAsync(StateHasChanged);
+    }
+
+
     private async Task AcceptFriendRequest(int friendRequestId)
     {
         await userService.AcceptFriendRequest(friendRequestId);
@@ -79,5 +97,10 @@
     {
         await serverInviteService.DeleteInvite(serverInviteId);
         await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        callbackService.Unsubscribe(CallbackType.User, (int)userStateService.loggedInUserId!, UserHasUpdated);
     }
 }

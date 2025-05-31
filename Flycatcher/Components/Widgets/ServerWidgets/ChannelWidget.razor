@@ -22,7 +22,7 @@
 </div>
 
 <div tyle="width: 100%;">
-    <Virtualize Context="message" ItemsProvider="LoadMessages" @ref="virtualizeRef" OverscanCount="8">
+    <Virtualize Context="message" ItemsProvider="LoadMessagesAsync" @ref="virtualizeRef" OverscanCount="8">
         @if (message.Content is not null)
         {
             <MudPaper Elevation="3">
@@ -42,18 +42,22 @@
     private int channelId;
     private string channelName = string.Empty;
 
-    private ValueTask<ItemsProviderResult<Message>> LoadMessages(ItemsProviderRequest request)
+    private async ValueTask<ItemsProviderResult<Message>> LoadMessagesAsync(ItemsProviderRequest request)
     {
         using var scope = serviceScopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ContextFactory>();
         var context = contextFactory.CreateDbContext();
+
         QueryableRepository<Message> scopedRepo = new QueryableRepository<Message>(dbContext);
         MessageService messageService = new MessageService(scopedRepo, callbackService);
-        var messages = messageService.GetChannelMessages(channelId, request.StartIndex, request.Count);
-        return new ValueTask<ItemsProviderResult<Message>>(new ItemsProviderResult<Message>(messages, messageService.GetChannelMessagesCount((int)userStateService.selectedChannelId!)));
+
+        var messages = await messageService.GetChannelMessages(channelId, request.StartIndex, request.Count);
+        var count = await messageService.GetChannelMessagesCount((int)userStateService.selectedChannelId!);
+
+        return new ItemsProviderResult<Message>(messages, count);
     }
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         channelId = (int)userStateService.selectedChannelId!;
 
@@ -61,7 +65,7 @@
         var contextFactory = scope.ServiceProvider.GetRequiredService<ContextFactory>();
         var dbContext = contextFactory.CreateDbContext();
         var queryable = dbContext.Messages.AsQueryable();
-        channelName = channelService.GetChannelName(channelId);
+        channelName = await channelService.GetChannelName(channelId);
         callbackService.Subscribe(CallbackType.Channel, channelId, GetNewMessagesAsync);
     }
 
