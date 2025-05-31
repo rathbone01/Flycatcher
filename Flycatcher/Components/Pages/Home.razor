@@ -32,7 +32,7 @@
             <br />
         </div>
         <MudButton Variant="Variant.Text" OnClick="GoHome">Home</MudButton>
-        @foreach (var server in userService.GetUserServers((int)userStateService.loggedInUserId!))
+        @foreach (var server in servers)
         {
             @if (server.Id == userStateService.selectedServerId)
             {
@@ -55,6 +55,7 @@
 
 @code {
     bool _drawerOpen = false;
+    private List<Server> servers = new List<Server>();
 
     private string GetInformationalVersion()
     {
@@ -68,10 +69,11 @@
         return Assembly.GetExecutingAssembly().GetName().Version!.ToString();
     }
 
-    private void OnLoginSuccess(int userId)
+    private async Task OnLoginSuccess(int userId)
     {
         userStateService.loggedInUserId = userId;
-        userStateService.loggedInUsername = userService.GetUsername(userId);
+        userStateService.loggedInUsername = await userService.GetUsername(userId);
+        servers = await userService.GetUserServers((int)userStateService.loggedInUserId!);
         StateHasChanged();
     }
 

@@ -11,7 +11,7 @@
             <MudTabPanel Text="Friends">
                 <FriendsWidget />
             </MudTabPanel>
-            <MudTabPanel Text="@RequestsText()">
+            <MudTabPanel Text="@requestsText">
                 <RequestsWidget />
             </MudTabPanel>
             <MudTabPanel Text="Add a Friend">
@@ -30,6 +30,7 @@
 @code {
     private int loggedInUserId;
     private bool isSiteAdmin = false;
+    private string requestsText = string.Empty;
 
     protected async override Task OnInitializedAsync()
     {
@@ -39,14 +40,15 @@
         if (userStateService.loggedInUserId is not null)
         {
             isSiteAdmin = await userService.IsUserSiteAdmin((int)userStateService.loggedInUserId!);
+            requestsText = await SetRequestsText();
         }
     }
 
-    private string RequestsText()
+    private async Task<string> SetRequestsText()
     {
         int inviteCountTotal = 0;
         inviteCountTotal += userService.GetFriendRequestsCount((int)userStateService.loggedInUserId!);
-        inviteCountTotal += serverInviteService.GetServerInvitesCount((int)userStateService.loggedInUserId!);
+        inviteCountTotal += await serverInviteService.GetServerInvitesCount((int)userStateService.loggedInUserId!);
 
         if (inviteCountTotal > 0)
         {
@@ -58,6 +60,7 @@
 
     private async Task UserHasUpdatedAsync()
     {
+        requestsText = await SetRequestsText();
         await InvokeAsync(StateHasChanged);
     }
 

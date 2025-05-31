@@ -1,6 +1,8 @@
 ﻿using Flycatcher.DataAccess.Interfaces;
 using Flycatcher.Models.Database;
 using Flycatcher.Models.Results;
+using Microsoft.EntityFrameworkCore;
+using Flycatcher.Services.Enumerations;
 
 namespace Flycatcher.Services
 {
@@ -21,44 +23,53 @@ namespace Flycatcher.Services
             this.messageQueryableRepository = messageQueryableRepository;
         }
 
-        public bool DoesServerExist(int serverId)
+        public async Task<bool> DoesServerExist(int serverId)
         {
-            return serverQueryableRepository
+            return await serverQueryableRepository
                 .GetQueryable()
-                .Any(s => s.Id == serverId);
+                .AnyAsync(s => s.Id == serverId);
         }
 
-        public int GetServerOwnerUserId(int serverId)
+        public async Task<int> GetServerOwnerUserId(int serverId)
         {
-            return serverQueryableRepository
-                .GetQueryable()
-                .FirstOrDefault(s => s.Id == serverId)?.OwnerUserId ?? -1;
+
+            var server = await serverQueryableRepository
+            .GetQueryable()
+            .FirstOrDefaultAsync(s => s.Id == serverId);
+                
+            if (server is null)
+                return -1;
+
+            return server.OwnerUserId;
         }
 
-        public string GetServerName(int serverId)
+        public async Task<string> GetServerName(int serverId)
         {
-            return serverQueryableRepository
-                .GetQueryable()
-                .FirstOrDefault(s => s.Id == serverId)?.Name ?? "Error Loading Server Name";
+            var server = await serverQueryableRepository
+                 .GetQueryable()
+                 .FirstOrDefaultAsync(s => s.Id == serverId);
+
+            if (server is null)
+                return string.Empty;
+
+            return server.Name;
         }
 
-        public List<User> GetServerUsers(int serverId)
+        public async  Task<List<User>> GetServerUsers(int serverId)
         {
-            return userServerQueryableRepository
+            return await userServerQueryableRepository
                 .GetQueryable()
                 .Where(us => us.ServerId == serverId)
                 .Select(us => us.User)
-                .ToList();
+                .ToListAsync();
         }
 
-        public List<Channel> GetServerChannels(int serverId)
+        public async Task<List<Channel>> GetServerChannels(int serverId)
         {
-            var channels = channelQueryableRepository
+            return await channelQueryableRepository
                 .GetQueryable()
                 .Where(c => c.ServerId == serverId)
-                .ToList();
-
-            return channels;
+                .ToListAsync();
         }
 
         public async Task CreateServer(string serverName, int ownerId)
@@ -82,18 +93,18 @@ namespace Flycatcher.Services
 
         public async Task<Result> DeleteServer(int serverId)
         {
-            var server = serverQueryableRepository
+            var server = await serverQueryableRepository
                 .GetQueryable()
-                .FirstOrDefault(s => s.Id == serverId);
+                .FirstOrDefaultAsync(s => s.Id == serverId);
 
             if (server is null)
                 return new Result(false, "Server not found.");
 
             //delete all channels, and messages in those channels
-            var channels = channelQueryableRepository
+            var channels = await channelQueryableRepository
                 .GetQueryable()
                 .Where(c => c.ServerId == serverId)
-                .ToList();
+                .ToListAsync();
 
             foreach (var channel in channels)
             {
@@ -109,9 +120,9 @@ namespace Flycatcher.Services
 
         public async Task<Result> LeaveServer(int userId, int serverId)
         {
-            var userServer = userServerQueryableRepository
+            var userServer = await userServerQueryableRepository
                 .GetQueryable()
-                .FirstOrDefault(us => us.UserId == userId && us.ServerId == serverId);
+                .FirstOrDefaultAsync(us => us.UserId == userId && us.ServerId == serverId);
 
             if (userServer is null)
                 return new Result(false, "User not in server.");

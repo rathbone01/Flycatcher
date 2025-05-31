@@ -58,14 +58,14 @@
     private string username = string.Empty;
     private string password = string.Empty;
 
-    private void Login()
+    private async Task Login()
     {
         var hashedPassword = HashClass.Hash(password);
-        var result = userService.Login(username, hashedPassword);
+        var result = await userService.Login(username, hashedPassword);
         if (result.Success && result.UserId is not null)
         {
             errorMessage = string.Empty;
-            OnLogin.InvokeAsync((int)result.UserId);
+            await OnLogin.InvokeAsync((int)result.UserId);
         }
         else
         {

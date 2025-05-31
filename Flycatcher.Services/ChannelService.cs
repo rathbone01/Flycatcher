@@ -1,6 +1,8 @@
 ﻿using Flycatcher.DataAccess.Interfaces;
 using Flycatcher.Models.Database;
 using Flycatcher.Models.Results;
+using Microsoft.EntityFrameworkCore;
+using Flycatcher.Services.Enumerations;
 
 namespace Flycatcher.Services
 {
@@ -31,9 +33,9 @@ namespace Flycatcher.Services
 
         public async Task<Result> DeleteChannel(int channelId)
         {
-            var channel = channelQueryableRepository
+            var channel = await channelQueryableRepository
                 .GetQueryable()
-                .FirstOrDefault(c => c.Id == channelId);
+                .FirstOrDefaultAsync(c => c.Id == channelId);
 
             if (channel is null)
                 return new Result(false, "Channel not found.");
@@ -50,11 +52,16 @@ namespace Flycatcher.Services
             return new Result(true);
         }
 
-        public string GetChannelName(int channelId)
+        public async Task<string> GetChannelName(int channelId)
         {
-            return channelQueryableRepository
+            var channel = await channelQueryableRepository
                 .GetQueryable()
-                .FirstOrDefault(c => c.Id == channelId)?.Name ?? "Error Loading Channel Name";
+                .FirstOrDefaultAsync(c => c.Id == channelId);
+
+            if (channel is null)
+                return string.Empty;
+
+            return channel.Name;
         }
     }
 }
