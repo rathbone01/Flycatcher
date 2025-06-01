@@ -128,6 +128,9 @@ namespace Flycatcher.Services
                 return new Result(false, "User not in server.");
 
             await userServerQueryableRepository.Delete(userServer);
+            await callbackService.NotifyAsync(CallbackType.UserServerListUpdated, userServer.UserId);
+            await callbackService.NotifyAsync(CallbackType.ServerUserUpdated, serverId);
+
             return new Result(true);
         }
     }

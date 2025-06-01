@@ -68,26 +68,7 @@
 </MudMainContent>
 
 <MudDrawer Open="rightDrawerOpen" ClipMode="DrawerClipMode.Always" Anchor="Anchor.Right" Variant="DrawerVariant.Persistent">
-    <div style="justify-content: center; text-align: center;">
-        <MudText Typo="Typo.h6">Users</MudText>
-    </div>
-    <MudList ReadOnly="true" T="string">
-        @foreach (var user in serverUsers)
-        {
-            <div style="display: flex; justify-content: center; margin-bottom: 1em;">
-                <MudPaper Style="width: 90%;" Outlined="true">
-                    @if (user.Id == serverOwnerId)
-                    {
-                        <MudListItem Icon="@Icons.Material.Filled.Star" Text="@user.Username" />
-                    }
-                    else
-                    {
-                        <MudListItem Text="@user.Username" />
-                    }
-                </MudPaper>
-            </div>
-        }
-    </MudList>
+    <RightSideBarContent/>
 </MudDrawer>
 
 @code {
@@ -244,6 +225,7 @@
         var parameters = new DialogParameters();
         parameters.Add("Title", "Invite to server");
         parameters.Add("Message", "Please enter the Username of the User you'd like to invite.");
+        parameters.Add("ItemName", "User Name");
 
         var dialog = await dialogService.ShowAsync<StringDialog>("Send Invite", parameters);
         var result = await dialog.Result;

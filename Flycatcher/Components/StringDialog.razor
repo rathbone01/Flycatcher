@@ -6,7 +6,7 @@
     </TitleContent>
     <DialogContent>
         <MudText>@Message</MudText>
-        <MudTextField Label="Item Name" @bind-Value="_itemName" />
+        <MudTextField Label="@ItemName" @bind-Value="_itemName" />
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Cancel</MudButton>
@@ -24,6 +24,9 @@
 
     [Parameter]
     public string Message { get; set; } = string.Empty;
+
+    [Parameter]
+    public string ItemName { get; set; } = "Item";
 
     private string _itemName = string.Empty;
 

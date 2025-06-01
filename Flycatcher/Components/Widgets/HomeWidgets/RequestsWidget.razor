@@ -3,6 +3,7 @@
 @inject UserStateService userStateService
 @inject ServerInviteService serverInviteService
 @inject CallbackService callbackService
+@inject FriendRequestService friendRequestService
 
 <MudText Typo="Typo.h5">Friend Requests</MudText>
 <MudSimpleTable Style="max-height: 40vh;">
@@ -64,26 +65,31 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await UpdateRequests();
         callbackService.Subscribe(CallbackType.User, (int)userStateService.loggedInUserId!, UserHasUpdated);
     }
 
     private async Task UserHasUpdated()
     {
-        serverInvites = await serverInviteService.GetServerInvites((int)userStateService.loggedInUserId!);
-        friendRequests = await userService.GetFriendRequests((int)userStateService.loggedInUserId!);
+        await UpdateRequests();
         await InvokeAsync(StateHasChanged);
     }
 
+    private async Task UpdateRequests()
+    {
+        serverInvites = await serverInviteService.GetServerInvites((int)userStateService.loggedInUserId!);
+        friendRequests = await friendRequestService.GetFriendRequests((int)userStateService.loggedInUserId!);
+    }
 
     private async Task AcceptFriendRequest(int friendRequestId)
     {
-        await userService.AcceptFriendRequest(friendRequestId);
+        await friendRequestService.AcceptFriendRequest(friendRequestId);
         await InvokeAsync(StateHasChanged);
     }
 
     private async Task DeclineFriendRequest(int friendRequestId)
     {
-        await userService.RejectFriendRequest(friendRequestId);
+        await friendRequestService.RejectFriendRequest(friendRequestId);
         await InvokeAsync(StateHasChanged);
     }
 

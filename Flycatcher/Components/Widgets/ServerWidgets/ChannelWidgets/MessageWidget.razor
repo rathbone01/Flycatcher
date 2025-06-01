@@ -1,0 +1,15 @@
+﻿@if (Message.Content is null)
+    return;
+
+<MudPaper Elevation="3">
+    <MudText Style="margin-left: 10px;" Typo="Typo.body1">@Message.User.Username</MudText>
+    <MudText Style="margin-left: 10px; margin-bottom: 10px; width: 98%; white-space: pre-wrap; word-wrap: break-word;" Typo="Typo.body2">
+        @Message.Content.Replace("\r\n", "\n").Replace("\r", "\n")
+    </MudText>
+</MudPaper>
+
+
+@code {
+    [Parameter]
+    public required Message Message { get; set; }
+}

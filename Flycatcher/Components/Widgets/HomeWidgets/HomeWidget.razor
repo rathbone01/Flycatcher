@@ -4,6 +4,7 @@
 @inject UserService userService
 @inject ServerInviteService serverInviteService
 @inject CallbackService callbackService
+@inject FriendRequestService friendRequestService
 
 <MudMainContent>
     <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge">
@@ -47,7 +48,7 @@
     private async Task<string> SetRequestsText()
     {
         int inviteCountTotal = 0;
-        inviteCountTotal += userService.GetFriendRequestsCount((int)userStateService.loggedInUserId!);
+        inviteCountTotal += friendRequestService.GetFriendRequestsCount((int)userStateService.loggedInUserId!);
         inviteCountTotal += await serverInviteService.GetServerInvitesCount((int)userStateService.loggedInUserId!);
 
         if (inviteCountTotal > 0)
