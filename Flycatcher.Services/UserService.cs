@@ -186,99 +186,11 @@ namespace Flycatcher.Services
             return listUser;
         }
 
-        public async Task<Result> CreateFriendRequest(int userId, string recipentUserName)
-        {
-            var recipentUser = await userQueryableRepository
-                .GetQueryable()
-                .FirstOrDefaultAsync(u => u.Username == recipentUserName);
-
-            if (recipentUser is null)
-                return new Result(false, "User not found.");
-
-            if (await AreUsersFriends(userId, recipentUser.Id))
-                return new Result(false, "You are already friends.");
-
-            await CreateFriendRequest(userId, recipentUser.Id);
-            return new Result(true);
-        }
-
         public async Task<bool> AreUsersFriends(int userId, int friendId)
         {
             return await userFriendQueryableRepository
             .GetQueryable()
             .AnyAsync(uf => (uf.UserId == userId && uf.FriendId == friendId) || (uf.UserId == friendId && uf.FriendId == userId));
-        }
-
-        public async Task CreateFriendRequest(int userId, int friendId)
-        {
-            //check there is not a pending request in either direction
-            if (friendRequestQueryableRepository.GetQueryable().Any(fr => fr.SenderId == userId && fr.ReceiverId == friendId)
-                || friendRequestQueryableRepository.GetQueryable().Any(fr => fr.SenderId == friendId && fr.ReceiverId == userId))
-                return;
-
-            var friendRequest = new FriendRequest
-            {
-                SenderId = userId,
-                ReceiverId = friendId
-            };
-
-            await friendRequestQueryableRepository.Create(friendRequest);
-            await callbackService.NotifyAsync(CallbackType.User, friendRequest.ReceiverId);
-        }
-
-        public async Task<List<FriendRequest>> GetFriendRequests(int userId)
-        {
-            return await friendRequestQueryableRepository
-                .GetQueryable()
-                .Where(fr => fr.ReceiverId == userId)
-                .Include(fr => fr.Sender)
-                .ToListAsync();
-        }
-
-        public int GetFriendRequestsCount(int userId)
-        {
-            return friendRequestQueryableRepository
-                .GetQueryable()
-                .Where(fr => fr.ReceiverId == userId)
-                .Include(fr => fr.Sender)
-                .Count();
-        }
-
-        public async Task AcceptFriendRequest(int friendRequestId)
-        {
-            var friendRequest = await friendRequestQueryableRepository
-                .GetQueryable()
-                .FirstOrDefaultAsync(fr => fr.Id == friendRequestId);
-
-            if (friendRequest is null)
-                return;
-
-            var userFriend = new UserFriend
-            {
-                UserId = friendRequest.SenderId,
-                FriendId = friendRequest.ReceiverId
-            };
-
-            await userFriendQueryableRepository.Create(userFriend);
-            await friendRequestQueryableRepository.Delete(friendRequest);
-
-            await callbackService.NotifyAsync(CallbackType.User, userFriend.UserId);
-            await callbackService.NotifyAsync(CallbackType.User, userFriend.FriendId);
-        }
-
-        public async Task RejectFriendRequest(int friendRequestId)
-        {
-            var friendRequest = await friendRequestQueryableRepository
-                .GetQueryable()
-                .FirstOrDefaultAsync(fr => fr.Id == friendRequestId);
-
-            if (friendRequest is null)
-                return;
-
-            var receiverId = friendRequest.ReceiverId;
-
-            await friendRequestQueryableRepository.Delete(friendRequest);
-            await callbackService.NotifyAsync(CallbackType.User, receiverId);
         }
 
         public async Task<Result> RemoveFriend(int userId, int friendUserId)
@@ -300,7 +212,5 @@ namespace Flycatcher.Services
             await callbackService.NotifyAsync(CallbackType.User, friendUserId);
             return new Result(true);
         }
-
-
     }
 }

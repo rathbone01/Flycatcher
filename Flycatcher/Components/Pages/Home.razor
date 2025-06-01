@@ -1,10 +1,12 @@
-﻿@page "/"
+﻿@implements IDisposable
+@page "/"
 @using System.Reflection
 @inject UserService userService
 @inject ServerService serverService
 @inject ChannelService channelService
 @inject MessageService messageService
 @inject UserStateService userStateService
+@inject CallbackService callbackService
 @inject IDialogService dialogService
 
 @if (userStateService.loggedInUserId is null)
@@ -74,6 +76,15 @@
         userStateService.loggedInUserId = userId;
         userStateService.loggedInUsername = await userService.GetUsername(userId);
         servers = await userService.GetUserServers((int)userStateService.loggedInUserId!);
+
+        callbackService.Subscribe(CallbackType.UserServerListUpdated, userStateService.loggedInUserId!.Value, ServerListUpdated);
+
+        StateHasChanged();
+    }
+
+    private async Task ServerListUpdated()
+    {
+        servers = await userService.GetUserServers((int)userStateService.loggedInUserId!);
         StateHasChanged();
     }
 
@@ -123,10 +134,23 @@
 
     private void Logout()
     {
+        if (userStateService.loggedInUserId is not null)
+        {
+            callbackService.Unsubscribe(CallbackType.UserServerListUpdated, userStateService.loggedInUserId.Value, ServerListUpdated);
+        }
+
         userStateService.loggedInUsername = null;
         userStateService.loggedInUserId = null;
         userStateService.selectedServerId = null;
         userStateService.selectedChannelId = null;
         userStateService.selectedFriendChat = null;
+    }
+
+    public void Dispose()
+    {
+        if (userStateService.loggedInUserId is null)
+            return;
+
+        callbackService.Unsubscribe(CallbackType.UserServerListUpdated, userStateService.loggedInUserId.Value, ServerListUpdated);
     }
 }

@@ -1,5 +1,6 @@
 ﻿@inject UserStateService userStateService
 @inject UserService userService
+@inject FriendRequestService friendRequestService
 
 <MudContainer Class="d-flex justify-center align-center" Style="height: 30vh;">
     <MudCard Style="width: 400px;">
@@ -27,7 +28,7 @@
 
     private async Task AddFriend()
     {
-        var result = await userService.CreateFriendRequest((int)userStateService.loggedInUserId!, friendUsername);
+        var result = await friendRequestService.CreateFriendRequest((int)userStateService.loggedInUserId!, friendUsername);
         if (result.Success)
         {
             errorMessage = "Friend Request Sent";

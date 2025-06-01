@@ -18,6 +18,7 @@ namespace Flycatcher.Configuration
                 .AddScoped<UserStateService>()
                 .AddScoped<SiteAdminService>()
                 .AddScoped<ServerInviteService>()
+                .AddScoped<FriendRequestService>()
 
                 .AddSingleton<CallbackService>();
         }

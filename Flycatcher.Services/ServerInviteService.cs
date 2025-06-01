@@ -105,8 +105,8 @@ namespace Flycatcher.Services
             await userServerQueryableRepository.Create(userServer);
             await serverInviteQueryableRepository.Delete(invite);
 
-            await callbackService.NotifyAsync(CallbackType.User, userServer.UserId);
-            await callbackService.NotifyAsync(CallbackType.Server, userServer.ServerId);
+            await callbackService.NotifyAsync(CallbackType.UserServerListUpdated, userServer.UserId);
+            await callbackService.NotifyAsync(CallbackType.ServerUserUpdated, userServer.ServerId);
 
             return new Result(true);
         }

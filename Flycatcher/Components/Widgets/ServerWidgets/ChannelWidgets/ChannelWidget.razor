@@ -23,15 +23,7 @@
 
 <div tyle="width: 100%;">
     <Virtualize Context="message" ItemsProvider="LoadMessagesAsync" @ref="virtualizeRef" OverscanCount="8">
-        @if (message.Content is not null)
-        {
-            <MudPaper Elevation="3">
-                <MudText Style="margin-left: 10px;" Typo="Typo.body1">@message.User.Username</MudText>
-                <MudText Style="margin-left: 10px; margin-bottom: 10px; width: 98%; white-space: pre-wrap; word-wrap: break-word;" Typo="Typo.body2">
-                    @message.Content.Replace("\r\n", "\n").Replace("\r", "\n")
-                </MudText>
-            </MudPaper>
-        }
+        <MessageWidget Message="message" />
     </Virtualize>
 </div>
 
@@ -66,7 +58,7 @@
         var dbContext = contextFactory.CreateDbContext();
         var queryable = dbContext.Messages.AsQueryable();
         channelName = await channelService.GetChannelName(channelId);
-        callbackService.Subscribe(CallbackType.Channel, channelId, GetNewMessagesAsync);
+        callbackService.Subscribe(CallbackType.ChannelMessageEvent, channelId, GetNewMessagesAsync);
     }
 
     private async Task KeyUp(KeyboardEventArgs e)
@@ -104,6 +96,6 @@
 
     public void Dispose()
     {
-        callbackService.Unsubscribe(CallbackType.Channel, channelId, GetNewMessagesAsync);
+        callbackService.Unsubscribe(CallbackType.ChannelMessageEvent, channelId, GetNewMessagesAsync);
     }
 }
