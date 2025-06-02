@@ -63,7 +63,7 @@ namespace Flycatcher.Services
             };
 
             await serverInviteQueryableRepository.Create(invite);
-            await callbackService.NotifyAsync(CallbackType.User, recieverUserId);
+            await callbackService.NotifyAsync(CallbackType.ServerInvite, recieverUserId);
 
             return new Result(true);
         }
@@ -77,7 +77,7 @@ namespace Flycatcher.Services
             var recieverUserId = invite.RecieverUserId;
 
             await serverInviteQueryableRepository.Delete(invite);
-            await callbackService.NotifyAsync(CallbackType.User, recieverUserId);
+            await callbackService.NotifyAsync(CallbackType.ServerInvite, recieverUserId);
 
             return new Result(true);
         }

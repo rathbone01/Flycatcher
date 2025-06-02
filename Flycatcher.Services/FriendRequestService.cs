@@ -40,10 +40,16 @@ namespace Flycatcher.Services
 
         public async Task<Result> CreateFriendRequest(int userId, int friendId)
         {
-            //check there is not a pending request in either direction
-            if (friendRequestQueryableRepository.GetQueryable().Any(fr => fr.SenderId == userId && fr.ReceiverId == friendId)
-                || friendRequestQueryableRepository.GetQueryable().Any(fr => fr.SenderId == friendId && fr.ReceiverId == userId))
+            //check there is not a pending request in this direction
+            if (await IsFriendRequestPendingToOtherUser(userId, friendId))
                 return new Result { Success = false, ErrorMessage = "Request Already Exists" };
+
+            //check there is not a pending request in the other direction, if there is, accept it
+            if (await IsFriendRequestPendingToOtherUser(friendId, userId))
+            {
+                await AcceptFriendRequest(friendId);
+                return new Result(true);
+            }
 
             var friendRequest = new FriendRequest
             {
@@ -52,7 +58,7 @@ namespace Flycatcher.Services
             };
 
             await friendRequestQueryableRepository.Create(friendRequest);
-            await callbackService.NotifyAsync(CallbackType.User, friendRequest.ReceiverId);
+            await callbackService.NotifyAsync(CallbackType.FriendRequest, friendRequest.ReceiverId);
 
             return new Result(true);
         }
@@ -100,8 +106,8 @@ namespace Flycatcher.Services
             await userFriendQueryableRepository.Create(userFriend);
             await friendRequestQueryableRepository.Delete(friendRequest);
 
-            await callbackService.NotifyAsync(CallbackType.User, userFriend.UserId);
-            await callbackService.NotifyAsync(CallbackType.User, userFriend.FriendId);
+            await callbackService.NotifyAsync(CallbackType.FriendsListUpdated, userFriend.UserId);
+            await callbackService.NotifyAsync(CallbackType.FriendsListUpdated, userFriend.FriendId);
         }
 
         public async Task RejectFriendRequest(int friendRequestId)
@@ -116,7 +122,7 @@ namespace Flycatcher.Services
             var receiverId = friendRequest.ReceiverId;
 
             await friendRequestQueryableRepository.Delete(friendRequest);
-            await callbackService.NotifyAsync(CallbackType.User, receiverId);
+            await callbackService.NotifyAsync(CallbackType.FriendRequest, receiverId);
         }
     }
 }

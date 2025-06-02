@@ -79,7 +79,6 @@
     private int serverId;
 
     private string serverName = string.Empty;
-    private List<User> serverUsers = new List<User>();
     private List<Channel> serverChannels = new List<Channel>();
     private bool doesServerExist = true;
     private bool isServerOwner => (int)userStateService.loggedInUserId! == serverOwnerId;
@@ -89,23 +88,8 @@
 
     protected override async Task OnInitializedAsync()
     {
-        serverId = (int)userStateService.selectedServerId!;
-        serverOwnerId = await serverService.GetServerOwnerUserId(serverId);
-
-        doesServerExist = await serverService.DoesServerExist(serverId);
-        if (!doesServerExist)
-        {
-            userStateService.selectedServerId = null;
-            userStateService.selectedChannelId = null;
-            doesServerExist = false;
-            return;
-        }
-
-        serverName = await serverService.GetServerName(serverId);
-        serverUsers = await serverService.GetServerUsers(serverId);
-        serverChannels = await serverService.GetServerChannels(serverId);
-
-        callbackService.Subscribe(CallbackType.Server, serverId, ServerHasUpdatedAsync);
+        await GetServerProperties();
+        callbackService.Subscribe(CallbackType.ServerPropertyUpdated, serverId, GetServerProperties);
     }
 
     private void OnHiddenChanged(bool isLargeScreen)
@@ -233,15 +217,28 @@
         return (string?)result?.Data ?? null;
     }
 
-    public async Task ServerHasUpdatedAsync()
+    public async Task GetServerProperties()
     {
-        // Refresh the server's channels and users
+        serverId = (int)userStateService.selectedServerId!;
+        serverOwnerId = await serverService.GetServerOwnerUserId(serverId);
+
+        doesServerExist = await serverService.DoesServerExist(serverId);
+        if (!doesServerExist)
+        {
+            userStateService.selectedServerId = null;
+            userStateService.selectedChannelId = null;
+            doesServerExist = false;
+            return;
+        }
+
+        serverName = await serverService.GetServerName(serverId);
+        serverChannels = await serverService.GetServerChannels(serverId);
 
         await InvokeAsync(StateHasChanged);
     }
 
     public void Dispose()
     {
-        callbackService.Unsubscribe(CallbackType.Server, serverId, ServerHasUpdatedAsync);
+        callbackService.Unsubscribe(CallbackType.ServerPropertyUpdated, serverId, GetServerProperties);
     }
 }

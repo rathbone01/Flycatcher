@@ -28,7 +28,7 @@ namespace Flycatcher.Services
             };
 
             await channelQueryableRepository.Create(channel);
-            await callbackService.NotifyAsync(CallbackType.Server, serverId);
+            await callbackService.NotifyAsync(CallbackType.ServerPropertyUpdated, serverId);
         }
 
         public async Task<Result> DeleteChannel(int channelId)
@@ -47,7 +47,7 @@ namespace Flycatcher.Services
 
             // Delete the channel itself
             await channelQueryableRepository.Delete(channel);
-            await callbackService.NotifyAsync(CallbackType.Server, serverId);
+            await callbackService.NotifyAsync(CallbackType.ServerPropertyUpdated, serverId);
 
             return new Result(true);
         }

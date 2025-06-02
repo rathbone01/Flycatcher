@@ -89,6 +89,7 @@ namespace Flycatcher.Services
             };
 
             await userServerQueryableRepository.Create(userServer);
+            await callbackService.NotifyAsync(CallbackType.UserServerListUpdated, server.Id);
         }
 
         public async Task<Result> DeleteServer(int serverId)
@@ -113,7 +114,7 @@ namespace Flycatcher.Services
 
             await channelQueryableRepository.ExecuteDelete(c => c.ServerId == serverId);
             await serverQueryableRepository.Delete(server);
-            await callbackService.NotifyAsync(CallbackType.Server, serverId);
+            await callbackService.NotifyAsync(CallbackType.ServerDeleted, serverId);
 
             return new Result(true);
         }
