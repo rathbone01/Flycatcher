@@ -8,12 +8,6 @@ namespace Flycatcher.Services.Enumerations
 {
     public enum CallbackType
     {
-        // These basic types will be deprecated in favor of more specific types to cause less server rendering
-        Channel,
-        Server,
-        User,
-
-        // Need a more comprehensive list of callback types
         ServerInvite,               // Server invite received or responded to from the recipient's side
         ChannelMessageEvent,        // Channel message received, edited or deleted, updates the message list in the channel
         FriendRequest,              // Friend request received or responded to from the recipient's side
