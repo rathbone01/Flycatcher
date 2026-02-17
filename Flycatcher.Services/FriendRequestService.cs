@@ -58,7 +58,7 @@ namespace Flycatcher.Services
             };
 
             await friendRequestQueryableRepository.Create(friendRequest);
-            await callbackService.NotifyAsync(CallbackType.FriendRequest, friendRequest.ReceiverId);
+            await callbackService.NotifyAsync(CallbackType.FriendRequest, CallbackIdGenerator.CreateId(CallbackType.FriendRequest, friendRequest.ReceiverId));
 
             return new Result(true);
         }
@@ -104,8 +104,8 @@ namespace Flycatcher.Services
             await userFriendQueryableRepository.Create(userFriend);
             await friendRequestQueryableRepository.Delete(friendRequest);
 
-            await callbackService.NotifyAsync(CallbackType.FriendsListUpdated, userFriend.UserId);
-            await callbackService.NotifyAsync(CallbackType.FriendsListUpdated, userFriend.FriendId);
+            await callbackService.NotifyAsync(CallbackType.FriendsListUpdated, CallbackIdGenerator.CreateId(CallbackType.FriendsListUpdated, userFriend.UserId));
+            await callbackService.NotifyAsync(CallbackType.FriendsListUpdated, CallbackIdGenerator.CreateId(CallbackType.FriendsListUpdated, userFriend.FriendId));
         }
 
         public async Task RejectFriendRequest(int friendRequestId)
@@ -119,7 +119,7 @@ namespace Flycatcher.Services
             var receiverId = friendRequest.ReceiverId;
 
             await friendRequestQueryableRepository.Delete(friendRequest);
-            await callbackService.NotifyAsync(CallbackType.FriendRequest, receiverId);
+            await callbackService.NotifyAsync(CallbackType.FriendRequest, CallbackIdGenerator.CreateId(CallbackType.FriendRequest, receiverId));
         }
     }
 }

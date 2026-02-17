@@ -5,9 +5,9 @@ namespace Flycatcher.Services
     public class CallbackService
     {
         // Dictionary to hold the callback functions
-        private readonly Dictionary<(CallbackType type, int id), List<Func<Task>>> _callbacks = new();
+        private readonly Dictionary<(CallbackType type, Guid id), List<Func<Task>>> _callbacks = new();
 
-        public void Subscribe(CallbackType type, int id, Func<Task> callback)
+        public void Subscribe(CallbackType type, Guid id, Func<Task> callback)
         {
             var key = (type, id);
 
@@ -22,7 +22,7 @@ namespace Flycatcher.Services
             callbacks.Add(callback);
         }
 
-        public void Unsubscribe(CallbackType type, int id, Func<Task> callback)
+        public void Unsubscribe(CallbackType type, Guid id, Func<Task> callback)
         {
             var key = (type, id);
             if (_callbacks.TryGetValue(key, out var callbacks))
@@ -37,7 +37,7 @@ namespace Flycatcher.Services
             }
         }
 
-        public async Task NotifyAsync(CallbackType type, int id)
+        public async Task NotifyAsync(CallbackType type, Guid id)
         {
             var key = (type, id);
             if (_callbacks.TryGetValue(key, out var callbacks))

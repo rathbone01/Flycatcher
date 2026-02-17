@@ -198,8 +198,8 @@ namespace Flycatcher.Services
 
             await userFriendQueryableRepository.Delete(userFriend);
 
-            await callbackService.NotifyAsync(CallbackType.FriendsListUpdated, userId);
-            await callbackService.NotifyAsync(CallbackType.FriendsListUpdated, friendUserId);
+            await callbackService.NotifyAsync(CallbackType.FriendsListUpdated, CallbackIdGenerator.CreateId(CallbackType.FriendsListUpdated, userId));
+            await callbackService.NotifyAsync(CallbackType.FriendsListUpdated, CallbackIdGenerator.CreateId(CallbackType.FriendsListUpdated, friendUserId));
             return new Result(true);
         }
     }

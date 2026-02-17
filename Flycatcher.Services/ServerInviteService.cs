@@ -63,7 +63,7 @@ namespace Flycatcher.Services
             };
 
             await serverInviteQueryableRepository.Create(invite);
-            await callbackService.NotifyAsync(CallbackType.ServerInvite, recieverUserId);
+            await callbackService.NotifyAsync(CallbackType.ServerInvite, CallbackIdGenerator.CreateId(CallbackType.ServerInvite, recieverUserId));
 
             return new Result(true);
         }
@@ -77,7 +77,7 @@ namespace Flycatcher.Services
             var recieverUserId = invite.RecieverUserId;
 
             await serverInviteQueryableRepository.Delete(invite);
-            await callbackService.NotifyAsync(CallbackType.ServerInvite, recieverUserId);
+            await callbackService.NotifyAsync(CallbackType.ServerInvite, CallbackIdGenerator.CreateId(CallbackType.ServerInvite, recieverUserId));
 
             return new Result(true);
         }
@@ -105,8 +105,8 @@ namespace Flycatcher.Services
             await userServerQueryableRepository.Create(userServer);
             await serverInviteQueryableRepository.Delete(invite);
 
-            await callbackService.NotifyAsync(CallbackType.UserServerListUpdated, userServer.UserId);
-            await callbackService.NotifyAsync(CallbackType.ServerUserUpdated, userServer.ServerId);
+            await callbackService.NotifyAsync(CallbackType.UserServerListUpdated, CallbackIdGenerator.CreateId(CallbackType.UserServerListUpdated, userServer.UserId));
+            await callbackService.NotifyAsync(CallbackType.ServerUserUpdated, CallbackIdGenerator.CreateId(CallbackType.ServerUserUpdated, userServer.ServerId));
 
             return new Result(true);
         }

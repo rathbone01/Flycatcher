@@ -85,7 +85,7 @@ namespace Flycatcher.Services
             };
 
             await userServerQueryableRepository.Create(userServer);
-            await callbackService.NotifyAsync(CallbackType.UserServerListUpdated, server.Id);
+            await callbackService.NotifyAsync(CallbackType.UserServerListUpdated, CallbackIdGenerator.CreateId(CallbackType.UserServerListUpdated, server.Id));
         }
 
         public async Task<Result> DeleteServer(int serverId)
@@ -109,7 +109,7 @@ namespace Flycatcher.Services
 
             await channelQueryableRepository.ExecuteDelete(c => c.ServerId == serverId);
             await serverQueryableRepository.Delete(server);
-            await callbackService.NotifyAsync(CallbackType.ServerDeleted, serverId);
+            await callbackService.NotifyAsync(CallbackType.ServerDeleted, CallbackIdGenerator.CreateId(CallbackType.ServerDeleted, serverId));
 
             return new Result(true);
         }
@@ -123,8 +123,8 @@ namespace Flycatcher.Services
                 return new Result(false, "User not in server.");
 
             await userServerQueryableRepository.Delete(userServer);
-            await callbackService.NotifyAsync(CallbackType.UserServerListUpdated, userServer.UserId);
-            await callbackService.NotifyAsync(CallbackType.ServerUserUpdated, serverId);
+            await callbackService.NotifyAsync(CallbackType.UserServerListUpdated, CallbackIdGenerator.CreateId(CallbackType.UserServerListUpdated, userServer.UserId));
+            await callbackService.NotifyAsync(CallbackType.ServerUserUpdated, CallbackIdGenerator.CreateId(CallbackType.ServerUserUpdated, serverId));
 
             return new Result(true);
         }

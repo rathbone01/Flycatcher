@@ -39,8 +39,8 @@
     protected async override Task OnInitializedAsync()
     {
         loggedInUserId = (int)userStateService.loggedInUserId!;
-        callbackService.Subscribe(CallbackType.FriendRequest, loggedInUserId, UserHasUpdatedAsync);
-        callbackService.Subscribe(CallbackType.ServerInvite, loggedInUserId, UserHasUpdatedAsync);
+        callbackService.Subscribe(CallbackType.FriendRequest, CallbackIdGenerator.CreateId(CallbackType.FriendRequest, loggedInUserId), UserHasUpdatedAsync);
+        callbackService.Subscribe(CallbackType.ServerInvite, CallbackIdGenerator.CreateId(CallbackType.ServerInvite, loggedInUserId), UserHasUpdatedAsync);
 
         if (userStateService.loggedInUserId is not null)
         {
@@ -71,7 +71,7 @@
 
     public void Dispose()
     {
-        callbackService.Unsubscribe(CallbackType.FriendRequest, loggedInUserId, UserHasUpdatedAsync);
-        callbackService.Unsubscribe(CallbackType.ServerInvite, loggedInUserId, UserHasUpdatedAsync);
+        callbackService.Unsubscribe(CallbackType.FriendRequest, CallbackIdGenerator.CreateId(CallbackType.FriendRequest, loggedInUserId), UserHasUpdatedAsync);
+        callbackService.Unsubscribe(CallbackType.ServerInvite, CallbackIdGenerator.CreateId(CallbackType.ServerInvite, loggedInUserId), UserHasUpdatedAsync);
     }
 }

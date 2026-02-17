@@ -66,8 +66,8 @@
     protected override async Task OnInitializedAsync()
     {
         await UpdateRequests();
-        callbackService.Subscribe(CallbackType.ServerInvite, (int)userStateService.loggedInUserId!, UserHasUpdated);
-        callbackService.Subscribe(CallbackType.FriendRequest, (int)userStateService.loggedInUserId!, UserHasUpdated);
+        callbackService.Subscribe(CallbackType.ServerInvite, CallbackIdGenerator.CreateId(CallbackType.ServerInvite, (int)userStateService.loggedInUserId!), UserHasUpdated);
+        callbackService.Subscribe(CallbackType.FriendRequest, CallbackIdGenerator.CreateId(CallbackType.FriendRequest, (int)userStateService.loggedInUserId!), UserHasUpdated);
     }
 
     private async Task UserHasUpdated()
@@ -108,7 +108,7 @@
 
     public void Dispose()
     {
-        callbackService.Unsubscribe(CallbackType.ServerInvite, (int)userStateService.loggedInUserId!, UserHasUpdated);
-        callbackService.Unsubscribe(CallbackType.FriendRequest, (int)userStateService.loggedInUserId!, UserHasUpdated);
+        callbackService.Unsubscribe(CallbackType.ServerInvite, CallbackIdGenerator.CreateId(CallbackType.ServerInvite, (int)userStateService.loggedInUserId!), UserHasUpdated);
+        callbackService.Unsubscribe(CallbackType.FriendRequest, CallbackIdGenerator.CreateId(CallbackType.FriendRequest, (int)userStateService.loggedInUserId!), UserHasUpdated);
     }
 }

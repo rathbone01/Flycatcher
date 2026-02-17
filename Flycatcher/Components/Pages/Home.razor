@@ -83,7 +83,7 @@
         userStateService.loggedInUsername = await userService.GetUsername(userId);
         servers = await userService.GetUserServers((int)userStateService.loggedInUserId!);
 
-        callbackService.Subscribe(CallbackType.UserServerListUpdated, userStateService.loggedInUserId!.Value, ServerListUpdated);
+        callbackService.Subscribe(CallbackType.UserServerListUpdated, CallbackIdGenerator.CreateId(CallbackType.UserServerListUpdated, userStateService.loggedInUserId!.Value), ServerListUpdated);
 
         StateHasChanged();
     }
@@ -152,7 +152,7 @@
     {
         if (userStateService.loggedInUserId is not null)
         {
-            callbackService.Unsubscribe(CallbackType.UserServerListUpdated, userStateService.loggedInUserId.Value, ServerListUpdated);
+            callbackService.Unsubscribe(CallbackType.UserServerListUpdated, CallbackIdGenerator.CreateId(CallbackType.UserServerListUpdated, userStateService.loggedInUserId.Value), ServerListUpdated);
         }
 
         userStateService.loggedInUsername = null;
@@ -167,6 +167,6 @@
         if (userStateService.loggedInUserId is null)
             return;
 
-        callbackService.Unsubscribe(CallbackType.UserServerListUpdated, userStateService.loggedInUserId.Value, ServerListUpdated);
+        callbackService.Unsubscribe(CallbackType.UserServerListUpdated, CallbackIdGenerator.CreateId(CallbackType.UserServerListUpdated, userStateService.loggedInUserId.Value), ServerListUpdated);
     }
 }

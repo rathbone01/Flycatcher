@@ -94,7 +94,7 @@
         serverOwnerId = await serverService.GetServerOwnerUserId(serverId);
         serverUsers = await serverService.GetServerUsers(serverId);
 
-        callbackService.Subscribe(CallbackType.ServerUserUpdated, serverId, ServerUsersHaveUpdatedAsync);
+        callbackService.Subscribe(CallbackType.ServerUserUpdated, CallbackIdGenerator.CreateId(CallbackType.ServerUserUpdated, serverId), ServerUsersHaveUpdatedAsync);
     }
 
     private async Task ServerUsersHaveUpdatedAsync()
@@ -105,6 +105,6 @@
 
     public void Dispose()
     {
-        callbackService.Unsubscribe(CallbackType.ServerUserUpdated, serverId, ServerUsersHaveUpdatedAsync);
+        callbackService.Unsubscribe(CallbackType.ServerUserUpdated, CallbackIdGenerator.CreateId(CallbackType.ServerUserUpdated, serverId), ServerUsersHaveUpdatedAsync);
     }
 }

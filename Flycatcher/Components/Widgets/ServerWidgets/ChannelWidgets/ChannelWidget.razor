@@ -50,7 +50,7 @@
     {
         channelId = (int)userStateService.selectedChannelId!;
         channelName = await channelService.GetChannelName(channelId);
-        callbackService.Subscribe(CallbackType.ChannelMessageEvent, channelId, GetNewMessagesAsync);
+        callbackService.Subscribe(CallbackType.ChannelMessageEvent, CallbackIdGenerator.CreateId(CallbackType.ChannelMessageEvent, channelId), GetNewMessagesAsync);
     }
 
     private async Task KeyUp(KeyboardEventArgs e)
@@ -88,6 +88,6 @@
 
     public void Dispose()
     {
-        callbackService.Unsubscribe(CallbackType.ChannelMessageEvent, channelId, GetNewMessagesAsync);
+        callbackService.Unsubscribe(CallbackType.ChannelMessageEvent, CallbackIdGenerator.CreateId(CallbackType.ChannelMessageEvent, channelId), GetNewMessagesAsync);
     }
 }
