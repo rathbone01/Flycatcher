@@ -21,6 +21,7 @@ namespace Flycatcher.Configuration
             services.AddScoped<ServerInviteService>();
             services.AddScoped<FriendRequestService>();
             services.AddSingleton<CallbackService>();
+            services.AddScoped<DirectMessageService>();
 
             return services;
         }

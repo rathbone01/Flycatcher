@@ -1,0 +1,97 @@
+@implements IDisposable
+@using Flycatcher.DataAccess
+@using Flycatcher.Models.Database
+@inject UserStateService userStateService
+@inject UserService userService
+@inject DirectMessageService directMessageService
+@inject IServiceScopeFactory serviceScopeFactory
+@inject CallbackService callbackService
+@inject ContextFactory contextFactory
+
+<MudText Typo="Typo.h6">
+    @friendUsername
+</MudText>
+
+<div class="d-flex align-items-center" style="width: 100%;">
+    <MudTextField @bind-Text="@messageContent" OnKeyUp="KeyUp" TextUpdateSuppression="false" Immediate="true" T="string" Label="Send Message" Variant="Variant.Outlined" AutoGrow MaxLines="4" Class="flex-grow-1 me-2" />
+    <MudHidden Breakpoint="Breakpoint.SmAndDown" Invert="true">
+        <MudFab OnClick="SendMessage" Style="margin-top: 12px;" Color="Color.Secondary" StartIcon="@Icons.Material.Rounded.Send" Size="Size.Medium" />
+    </MudHidden>
+</div>
+
+<div style="width: 100%;">
+    <Virtualize Context="message" ItemsProvider="LoadMessagesAsync" @ref="virtualizeRef" OverscanCount="8">
+        <MessageWidget Message="message" />
+    </Virtualize>
+</div>
+
+@code {
+    [Parameter]
+    public required int FriendUserId { get; set; }
+
+    private Virtualize<Message>? virtualizeRef;
+    private string messageContent = string.Empty;
+    private string friendUsername = string.Empty;
+    private int loggedInUserId;
+    private int conversationKey;
+
+    private async ValueTask<ItemsProviderResult<Message>> LoadMessagesAsync(ItemsProviderRequest request)
+    {
+        using var scope = serviceScopeFactory.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ContextFactory>();
+        var context = contextFactory.CreateDbContext();
+
+        QueryableRepository<DirectMessage> scopedRepo = new QueryableRepository<DirectMessage>(dbContext);
+        DirectMessageService scopedService = new DirectMessageService(scopedRepo, callbackService);
+
+        var messages = await scopedService.GetDirectMessages(loggedInUserId, FriendUserId, request.StartIndex, request.Count);
+        var count = await scopedService.GetDirectMessagesCount(loggedInUserId, FriendUserId);
+
+        return new ItemsProviderResult<Message>(messages, count);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        loggedInUserId = (int)userStateService.loggedInUserId!;
+        friendUsername = await userService.GetUsername(FriendUserId);
+        conversationKey = DirectMessageService.GetConversationKey(loggedInUserId, FriendUserId);
+        callbackService.Subscribe(CallbackType.DirectMessageEvent, conversationKey, GetNewMessagesAsync);
+    }
+
+    private async Task KeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !e.ShiftKey)
+        {
+            await SendMessage();
+        }
+    }
+
+    private async Task SendMessage()
+    {
+        if (string.IsNullOrEmpty(messageContent.Trim()))
+        {
+            messageContent = string.Empty;
+            return;
+        }
+
+        await directMessageService.CreateDirectMessage(loggedInUserId, FriendUserId, messageContent.Trim());
+        messageContent = string.Empty;
+
+        StateHasChanged();
+    }
+
+    private async Task GetNewMessagesAsync()
+    {
+        if (virtualizeRef != null)
+        {
+            await virtualizeRef.RefreshDataAsync();
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        callbackService.Unsubscribe(CallbackType.DirectMessageEvent, conversationKey, GetNewMessagesAsync);
+    }
+}

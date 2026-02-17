@@ -53,7 +53,13 @@
     return;
 }
 
-<HomeWidget />
+@if (userStateService.selectedFriendChat is not null)
+{
+    <DirectMessageWidget FriendUserId="userStateService.selectedFriendChat.Value" @key=userStateService.selectedFriendChat />
+    return;
+}
+
+<HomeWidget OnStartDm="StartDm" />
 
 @code {
     bool _drawerOpen = false;
@@ -124,10 +130,20 @@
         StateHasChanged();
     }
 
+    private void StartDm(int friendId)
+    {
+        userStateService.selectedServerId = null;
+        userStateService.selectedChannelId = null;
+        userStateService.selectedFriendChat = friendId;
+        _drawerOpen = false;
+        StateHasChanged();
+    }
+
     private void GoHome()
     {
         userStateService.selectedServerId = null;
         userStateService.selectedChannelId = null;
+        userStateService.selectedFriendChat = null;
         _drawerOpen = false;
         StateHasChanged();
     }

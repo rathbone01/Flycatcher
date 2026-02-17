@@ -16,6 +16,7 @@ namespace Flycatcher.Services.Enumerations
         UserServerListUpdated,      // Updates the server list when a user joins or leaves a server
         FriendsListUpdated,         // Updates the friends list for both RX and TX, so added or removed friends, friend requests etc.
         ChannelDeleted,             // Channel deleted
-        ServerDeleted               // Server deleted
+        ServerDeleted,              // Server deleted
+        DirectMessageEvent          // Direct message received between two users
     }
 }

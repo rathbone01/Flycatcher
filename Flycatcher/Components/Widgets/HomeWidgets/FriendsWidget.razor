@@ -1,6 +1,8 @@
-﻿@using Flycatcher.Models.Database
+@implements IDisposable
+@using Flycatcher.Models.Database
 @inject UserStateService userStateService
 @inject UserService userService
+@inject CallbackService callbackService
 
 <MudSimpleTable>
     <thead>
@@ -20,8 +22,8 @@
                 <td>@friend.Username</td>
                 <td></td>
                 <td></td>
-                <td></td>
-                <td>DM Button will be here</td>
+                <td><MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="() => OnStartDm.InvokeAsync(friend.Id)">Message</MudButton></td>
+                <td><MudButton Variant="Variant.Text" Color="Color.Error" OnClick="() => RemoveFriend(friend.Id)">Remove</MudButton></td>
             </tr>
         }
 
@@ -29,10 +31,37 @@
 </MudSimpleTable>
 
 @code {
+    [Parameter]
+    public EventCallback<int> OnStartDm { get; set; }
+
     private List<User> friends = new();
+    private int loggedInUserId;
 
     protected override async Task OnInitializedAsync()
     {
-        friends = await userService.GetUserFriends((int)userStateService.loggedInUserId!);
+        loggedInUserId = (int)userStateService.loggedInUserId!;
+        await RefreshFriends();
+        callbackService.Subscribe(CallbackType.FriendsListUpdated, loggedInUserId, FriendsListUpdatedAsync);
+    }
+
+    private async Task RefreshFriends()
+    {
+        friends = await userService.GetUserFriends(loggedInUserId);
+    }
+
+    private async Task FriendsListUpdatedAsync()
+    {
+        await RefreshFriends();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task RemoveFriend(int friendId)
+    {
+        await userService.RemoveFriend(loggedInUserId, friendId);
+    }
+
+    public void Dispose()
+    {
+        callbackService.Unsubscribe(CallbackType.FriendsListUpdated, loggedInUserId, FriendsListUpdatedAsync);
     }
 }
