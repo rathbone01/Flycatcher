@@ -6,8 +6,8 @@ namespace Flycatcher.DataAccess
 {
     public class QueryableRepository<T> : IQueryableRepository<T> where T : class
     {
-        private readonly ContextFactory contextFactory;
-        public QueryableRepository(ContextFactory contextFactory)
+        private readonly IDbContextFactory<DataContext> contextFactory;
+        public QueryableRepository(IDbContextFactory<DataContext> contextFactory)
         {
             this.contextFactory = contextFactory;
         }

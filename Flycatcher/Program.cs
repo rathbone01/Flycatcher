@@ -51,7 +51,8 @@ namespace Flycatcher
 
             using (var scope = app.Services.CreateScope())
             {
-                using var db = scope.ServiceProvider.GetRequiredService<DbContext>();
+                var contextFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<DataContext>>();
+                using var db = contextFactory.CreateDbContext();
                 db.Database.Migrate();
             }
 

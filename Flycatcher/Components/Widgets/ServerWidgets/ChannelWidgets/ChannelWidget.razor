@@ -1,13 +1,14 @@
 ﻿@implements IDisposable
 @using Flycatcher.DataAccess
 @using Flycatcher.Models.Database
+@using Microsoft.EntityFrameworkCore
 @inject UserStateService userStateService
 @inject ServerService serverService
 @inject ChannelService channelService
 @inject MessageService messageService
 @inject IServiceScopeFactory serviceScopeFactory
 @inject CallbackService callbackService
-@inject ContextFactory contextFactory
+@inject IDbContextFactory<DataContext> contextFactory
 
 
 <MudText Typo="Typo.h6">
@@ -36,11 +37,7 @@
 
     private async ValueTask<ItemsProviderResult<Message>> LoadMessagesAsync(ItemsProviderRequest request)
     {
-        using var scope = serviceScopeFactory.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<ContextFactory>();
-        var context = contextFactory.CreateDbContext();
-
-        QueryableRepository<Message> scopedRepo = new QueryableRepository<Message>(dbContext);
+        QueryableRepository<Message> scopedRepo = new QueryableRepository<Message>(contextFactory);
         MessageService messageService = new MessageService(scopedRepo, callbackService);
 
         var messages = await messageService.GetChannelMessages(channelId, request.StartIndex, request.Count);
@@ -52,11 +49,6 @@
     protected override async Task OnInitializedAsync()
     {
         channelId = (int)userStateService.selectedChannelId!;
-
-        using var scope = serviceScopeFactory.CreateScope();
-        var contextFactory = scope.ServiceProvider.GetRequiredService<ContextFactory>();
-        var dbContext = contextFactory.CreateDbContext();
-        var queryable = dbContext.Messages.AsQueryable();
         channelName = await channelService.GetChannelName(channelId);
         callbackService.Subscribe(CallbackType.ChannelMessageEvent, channelId, GetNewMessagesAsync);
     }

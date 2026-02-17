@@ -1,16 +1,16 @@
 ﻿using Flycatcher.DataAccess;
 using Flycatcher.DataAccess.Interfaces;
+using Flycatcher.DataAccess.Options;
 using Flycatcher.Services;
+using Microsoft.EntityFrameworkCore;
 
 namespace Flycatcher.Configuration
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddApplicationServices(this IServiceCollection services, ConfigurationSection connectionStrings)
+        public static IServiceCollection AddApplicationServices(this IServiceCollection services, ConnectionStringOptions connectionStringOptions)
         {
-            var connectionString = connectionStrings.GetConnectionString("Flycatcher");
-
-            services.AddDbContextFactory<DataContext>();
+            services.AddDbContextFactory<DataContext>(options => options.UseSqlServer(connectionStringOptions.Flycatcher));
             services.AddScoped(typeof(IQueryableRepository<>), typeof(QueryableRepository<>));
             services.AddScoped<UserService>();
             services.AddScoped<ServerService>();
