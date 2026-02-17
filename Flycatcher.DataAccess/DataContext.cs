@@ -66,6 +66,18 @@ namespace Flycatcher.DataAccess
                 .HasForeignKey(si => si.SenderUserId)
                 .OnDelete(DeleteBehavior.NoAction);
 
+            modelBuilder.Entity<DirectMessage>()
+                .HasOne(dm => dm.Sender)
+                .WithMany()
+                .HasForeignKey(dm => dm.SenderId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<DirectMessage>()
+                .HasOne(dm => dm.Receiver)
+                .WithMany()
+                .HasForeignKey(dm => dm.ReceiverId)
+                .OnDelete(DeleteBehavior.NoAction);
+
             base.OnModelCreating(modelBuilder);
         }
 
@@ -78,5 +90,6 @@ namespace Flycatcher.DataAccess
         public DbSet<Message> Messages { get; set; }
         public DbSet<ServerInvite> ServerInvites { get; set; }
         public DbSet<FriendRequest> FriendRequests { get; set; }
+        public DbSet<DirectMessage> DirectMessages { get; set; }
     }
 }

@@ -10,7 +10,7 @@
     <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge">
         <MudTabs Outlined="true">
             <MudTabPanel Text="Friends">
-                <FriendsWidget />
+                <FriendsWidget OnStartDm="OnStartDm" />
             </MudTabPanel>
             <MudTabPanel Text="@requestsText">
                 <RequestsWidget />
@@ -29,6 +29,9 @@
 </MudMainContent>
 
 @code {
+    [Parameter]
+    public EventCallback<int> OnStartDm { get; set; }
+
     private int loggedInUserId;
     private bool isSiteAdmin = false;
     private string requestsText = string.Empty;
