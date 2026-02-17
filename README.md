@@ -1,5 +1,8 @@
 # flycatcher
 
+[![CI](https://github.com/JordanPatrick7/Flycatcher/actions/workflows/CI.yml/badge.svg)](https://github.com/JordanPatrick7/Flycatcher/actions/workflows/CI.yml)
+[![CD](https://github.com/JordanPatrick7/Flycatcher/actions/workflows/CD.yml/badge.svg)](https://github.com/JordanPatrick7/Flycatcher/actions/workflows/CD.yml)
+
 ## What is flycatcher?
 flycatcher is an opensource messaging app with servers and channels to connect with friends written in C#. The UI is Active Server Side Rendered Blazor using MudBlazor as a component library.
 

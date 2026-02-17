@@ -1,12 +1,12 @@
 @implements IDisposable
 @using Flycatcher.DataAccess
 @using Flycatcher.Models.Database
+@using Microsoft.EntityFrameworkCore
 @inject UserStateService userStateService
 @inject UserService userService
 @inject DirectMessageService directMessageService
-@inject IServiceScopeFactory serviceScopeFactory
 @inject CallbackService callbackService
-@inject ContextFactory contextFactory
+@inject IDbContextFactory<DataContext> contextFactory
 
 <MudText Typo="Typo.h6">
     @friendUsername
@@ -37,11 +37,7 @@
 
     private async ValueTask<ItemsProviderResult<Message>> LoadMessagesAsync(ItemsProviderRequest request)
     {
-        using var scope = serviceScopeFactory.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<ContextFactory>();
-        var context = contextFactory.CreateDbContext();
-
-        QueryableRepository<DirectMessage> scopedRepo = new QueryableRepository<DirectMessage>(dbContext);
+        QueryableRepository<DirectMessage> scopedRepo = new QueryableRepository<DirectMessage>(contextFactory);
         DirectMessageService scopedService = new DirectMessageService(scopedRepo, callbackService);
 
         var messages = await scopedService.GetDirectMessages(loggedInUserId, FriendUserId, request.StartIndex, request.Count);
