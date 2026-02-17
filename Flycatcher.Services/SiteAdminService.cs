@@ -17,33 +17,31 @@ namespace Flycatcher.Services
         public async Task<List<User>> GetAllUserPaged(int pageSize, int pageNumber)
         {
             return await userQueryableRepository
-                .GetQueryable()
-                .Skip(pageSize * (pageNumber - 1))
-                .Take(pageSize)
-                .ToListAsync();
+                .ExecuteAsync(q => q
+                    .Skip(pageSize * (pageNumber - 1))
+                    .Take(pageSize)
+                    .ToListAsync());
         }
 
-        public int GetAllUserCount()
+        public async Task<int> GetAllUserCount()
         {
-            return userQueryableRepository
-                .GetQueryable()
-                .Count();
+            return await userQueryableRepository
+                .ExecuteAsync(q => q.CountAsync());
         }
 
         public async Task<List<Server>> GetAllServersPaged(int pageSize, int pageNumber)
         {
             return await serverQueryableRepository
-                .GetQueryable()
-                .Skip(pageSize * (pageNumber - 1))
-                .Take(pageSize)
-                .ToListAsync();
+                .ExecuteAsync(q => q
+                    .Skip(pageSize * (pageNumber - 1))
+                    .Take(pageSize)
+                    .ToListAsync());
         }
 
         public async Task<int> GetAllServersCount()
         {
-            return  await serverQueryableRepository
-                .GetQueryable()
-                .CountAsync();
+            return await serverQueryableRepository
+                .ExecuteAsync(q => q.CountAsync());
         }
     }
 }

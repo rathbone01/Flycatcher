@@ -22,11 +22,11 @@ namespace Flycatcher.Services
             this.userService = userService;
             this.userFriendQueryableRepository = userFriendQueryableRepository;
         }
+
         public async Task<Result> CreateFriendRequest(int userId, string recipentUserName)
         {
             var recipentUser = await userQueryableRepository
-                .GetQueryable()
-                .FirstOrDefaultAsync(u => u.Username == recipentUserName);
+                .ExecuteAsync(q => q.FirstOrDefaultAsync(u => u.Username == recipentUserName));
 
             if (recipentUser is null)
                 return new Result(false, "User not found.");
@@ -66,33 +66,31 @@ namespace Flycatcher.Services
         public async Task<List<FriendRequest>> GetFriendRequests(int userId)
         {
             return await friendRequestQueryableRepository
-                .GetQueryable()
-                .Where(fr => fr.ReceiverId == userId)
-                .Include(fr => fr.Sender)
-                .ToListAsync();
+                .ExecuteAsync(q => q
+                    .Where(fr => fr.ReceiverId == userId)
+                    .Include(fr => fr.Sender)
+                    .ToListAsync());
         }
 
         public async Task<bool> IsFriendRequestPendingToOtherUser(int userId, int otherUserId)
         {
             return await friendRequestQueryableRepository
-                .GetQueryable()
-                .AnyAsync(fr => fr.SenderId == userId && fr.ReceiverId == otherUserId);
+                .ExecuteAsync(q => q.AnyAsync(fr => fr.SenderId == userId && fr.ReceiverId == otherUserId));
         }
 
-        public int GetFriendRequestsCount(int userId)
+        public async Task<int> GetFriendRequestsCount(int userId)
         {
-            return friendRequestQueryableRepository
-                .GetQueryable()
-                .Where(fr => fr.ReceiverId == userId)
-                .Include(fr => fr.Sender)
-                .Count();
+            return await friendRequestQueryableRepository
+                .ExecuteAsync(q => q
+                    .Where(fr => fr.ReceiverId == userId)
+                    .Include(fr => fr.Sender)
+                    .CountAsync());
         }
 
         public async Task AcceptFriendRequest(int friendRequestId)
         {
             var friendRequest = await friendRequestQueryableRepository
-                .GetQueryable()
-                .FirstOrDefaultAsync(fr => fr.Id == friendRequestId);
+                .ExecuteAsync(q => q.FirstOrDefaultAsync(fr => fr.Id == friendRequestId));
 
             if (friendRequest is null)
                 return;
@@ -113,8 +111,7 @@ namespace Flycatcher.Services
         public async Task RejectFriendRequest(int friendRequestId)
         {
             var friendRequest = await friendRequestQueryableRepository
-                .GetQueryable()
-                .FirstOrDefaultAsync(fr => fr.Id == friendRequestId);
+                .ExecuteAsync(q => q.FirstOrDefaultAsync(fr => fr.Id == friendRequestId));
 
             if (friendRequest is null)
                 return;

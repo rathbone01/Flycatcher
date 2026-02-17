@@ -43,8 +43,8 @@
         var pageNumber = (state.Page + 1);
         var pageSize = state.PageSize;
 
-        var items = await Task.Run(() => siteAdminService.GetAllUserPaged(pageSize, pageNumber));
-        var totalItems = await Task.Run(() => siteAdminService.GetAllUserCount());
+        var items = await siteAdminService.GetAllUserPaged(pageSize, pageNumber);
+        var totalItems = await siteAdminService.GetAllUserCount();
 
         _loading = false;
 

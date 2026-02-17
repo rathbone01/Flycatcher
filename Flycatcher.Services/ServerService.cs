@@ -26,17 +26,14 @@ namespace Flycatcher.Services
         public async Task<bool> DoesServerExist(int serverId)
         {
             return await serverQueryableRepository
-                .GetQueryable()
-                .AnyAsync(s => s.Id == serverId);
+                .ExecuteAsync(q => q.AnyAsync(s => s.Id == serverId));
         }
 
         public async Task<int> GetServerOwnerUserId(int serverId)
         {
-
             var server = await serverQueryableRepository
-            .GetQueryable()
-            .FirstOrDefaultAsync(s => s.Id == serverId);
-                
+                .ExecuteAsync(q => q.FirstOrDefaultAsync(s => s.Id == serverId));
+
             if (server is null)
                 return -1;
 
@@ -46,8 +43,7 @@ namespace Flycatcher.Services
         public async Task<string> GetServerName(int serverId)
         {
             var server = await serverQueryableRepository
-                 .GetQueryable()
-                 .FirstOrDefaultAsync(s => s.Id == serverId);
+                .ExecuteAsync(q => q.FirstOrDefaultAsync(s => s.Id == serverId));
 
             if (server is null)
                 return string.Empty;
@@ -55,21 +51,21 @@ namespace Flycatcher.Services
             return server.Name;
         }
 
-        public async  Task<List<User>> GetServerUsers(int serverId)
+        public async Task<List<User>> GetServerUsers(int serverId)
         {
             return await userServerQueryableRepository
-                .GetQueryable()
-                .Where(us => us.ServerId == serverId)
-                .Select(us => us.User)
-                .ToListAsync();
+                .ExecuteAsync(q => q
+                    .Where(us => us.ServerId == serverId)
+                    .Select(us => us.User)
+                    .ToListAsync());
         }
 
         public async Task<List<Channel>> GetServerChannels(int serverId)
         {
             return await channelQueryableRepository
-                .GetQueryable()
-                .Where(c => c.ServerId == serverId)
-                .ToListAsync();
+                .ExecuteAsync(q => q
+                    .Where(c => c.ServerId == serverId)
+                    .ToListAsync());
         }
 
         public async Task CreateServer(string serverName, int ownerId)
@@ -95,17 +91,16 @@ namespace Flycatcher.Services
         public async Task<Result> DeleteServer(int serverId)
         {
             var server = await serverQueryableRepository
-                .GetQueryable()
-                .FirstOrDefaultAsync(s => s.Id == serverId);
+                .ExecuteAsync(q => q.FirstOrDefaultAsync(s => s.Id == serverId));
 
             if (server is null)
                 return new Result(false, "Server not found.");
 
             //delete all channels, and messages in those channels
             var channels = await channelQueryableRepository
-                .GetQueryable()
-                .Where(c => c.ServerId == serverId)
-                .ToListAsync();
+                .ExecuteAsync(q => q
+                    .Where(c => c.ServerId == serverId)
+                    .ToListAsync());
 
             foreach (var channel in channels)
             {
@@ -122,8 +117,7 @@ namespace Flycatcher.Services
         public async Task<Result> LeaveServer(int userId, int serverId)
         {
             var userServer = await userServerQueryableRepository
-                .GetQueryable()
-                .FirstOrDefaultAsync(us => us.UserId == userId && us.ServerId == serverId);
+                .ExecuteAsync(q => q.FirstOrDefaultAsync(us => us.UserId == userId && us.ServerId == serverId));
 
             if (userServer is null)
                 return new Result(false, "User not in server.");

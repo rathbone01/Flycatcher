@@ -36,8 +36,14 @@ namespace Flycatcher
                 .AddEnvironmentVariables()
                 .Build();
 
-            builder.Services.Configure<ConnectionStringOptions>(cfg.GetSection("ConnectionStrings"));
-            builder.Services.AddApplicationServices();
+            builder.Services.AddOptions<ConnectionStringOptions>()
+                .Bind(cfg.GetSection(ConnectionStringOptions.SectionName))
+                .ValidateOnStart();
+
+            var connectionStringOptions = cfg.GetSection(ConnectionStringOptions.SectionName)
+                                            .Get<ConnectionStringOptions>();
+
+            builder.Services.AddApplicationServices(connectionStringOptions!);
 
             StaticWebAssetsLoader.UseStaticWebAssets(builder.Environment, builder.Configuration);
 
@@ -45,8 +51,7 @@ namespace Flycatcher
 
             using (var scope = app.Services.CreateScope())
             {
-                var contextFactory = scope.ServiceProvider.GetRequiredService<ContextFactory>();
-                var db = contextFactory.CreateDbContext();
+                using var db = scope.ServiceProvider.GetRequiredService<DbContext>();
                 db.Database.Migrate();
             }
 

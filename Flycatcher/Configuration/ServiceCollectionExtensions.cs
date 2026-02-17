@@ -6,21 +6,23 @@ namespace Flycatcher.Configuration
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddApplicationServices(this IServiceCollection services)
+        public static IServiceCollection AddApplicationServices(this IServiceCollection services, ConfigurationSection connectionStrings)
         {
-            return services
-                .AddScoped<ContextFactory>()
-                .AddScoped(typeof(IQueryableRepository<>), typeof(QueryableRepository<>))
-                .AddScoped<UserService>()
-                .AddScoped<ServerService>()
-                .AddScoped<ChannelService>()
-                .AddScoped<MessageService>()
-                .AddScoped<UserStateService>()
-                .AddScoped<SiteAdminService>()
-                .AddScoped<ServerInviteService>()
-                .AddScoped<FriendRequestService>()
+            var connectionString = connectionStrings.GetConnectionString("Flycatcher");
 
-                .AddSingleton<CallbackService>();
+            services.AddDbContextFactory<DataContext>();
+            services.AddScoped(typeof(IQueryableRepository<>), typeof(QueryableRepository<>));
+            services.AddScoped<UserService>();
+            services.AddScoped<ServerService>();
+            services.AddScoped<ChannelService>();
+            services.AddScoped<MessageService>();
+            services.AddScoped<UserStateService>();
+            services.AddScoped<SiteAdminService>();
+            services.AddScoped<ServerInviteService>();
+            services.AddScoped<FriendRequestService>();
+            services.AddSingleton<CallbackService>();
+
+            return services;
         }
     }
 }
