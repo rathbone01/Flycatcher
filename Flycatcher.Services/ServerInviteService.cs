@@ -26,33 +26,33 @@ namespace Flycatcher.Services
         public async Task<int> GetServerInvitesCount(int userId)
         {
             return await serverInviteQueryableRepository
-                .GetQueryable()
-                .Where(si => si.RecieverUserId == userId)
-                .Include(si => si.Server)
-                .CountAsync();
+                .ExecuteAsync(q => q
+                    .Where(si => si.RecieverUserId == userId)
+                    .Include(si => si.Server)
+                    .CountAsync());
         }
 
         public async Task<List<ServerInvite>> GetServerInvites(int userId)
         {
             return await serverInviteQueryableRepository
-                .GetQueryable()
-                .Where(si => si.RecieverUserId == userId)
-                .Include(si => si.Server)
-                .ToListAsync();
+                .ExecuteAsync(q => q
+                    .Where(si => si.RecieverUserId == userId)
+                    .Include(si => si.Server)
+                    .ToListAsync());
         }
 
         public async Task<Result> CreateInvite(int serverId, int recieverUserId, int senderUserId)
         {
-            if (await serverInviteQueryableRepository.GetQueryable().AnyAsync(si => si.ServerId == serverId && si.RecieverUserId == recieverUserId))
+            if (await serverInviteQueryableRepository.ExecuteAsync(q => q.AnyAsync(si => si.ServerId == serverId && si.RecieverUserId == recieverUserId)))
                 return new Result(false, "Invite already exists.");
 
-            if (!await serverQueryableRepository.GetQueryable().AnyAsync(s => s.Id == serverId))
+            if (!await serverQueryableRepository.ExecuteAsync(q => q.AnyAsync(s => s.Id == serverId)))
                 return new Result(false, "Server not found.");
 
-            if (!await userQueryableRepository.GetQueryable().AnyAsync(u => u.Id == recieverUserId))
+            if (!await userQueryableRepository.ExecuteAsync(q => q.AnyAsync(u => u.Id == recieverUserId)))
                 return new Result(false, "Reciever not found.");
 
-            if (!await userQueryableRepository.GetQueryable().AnyAsync(u => u.Id == senderUserId))
+            if (!await userQueryableRepository.ExecuteAsync(q => q.AnyAsync(u => u.Id == senderUserId)))
                 return new Result(false, "Sender not found.");
 
             var invite = new ServerInvite
@@ -70,7 +70,7 @@ namespace Flycatcher.Services
 
         public async Task<Result> DeleteInvite(int serverInviteId)
         {
-            var invite = await serverInviteQueryableRepository.GetQueryable().FirstOrDefaultAsync(si => si.Id == serverInviteId);
+            var invite = await serverInviteQueryableRepository.ExecuteAsync(q => q.FirstOrDefaultAsync(si => si.Id == serverInviteId));
             if (invite is null)
                 return new Result(false, "Invite not found.");
 
@@ -84,15 +84,15 @@ namespace Flycatcher.Services
 
         public async Task<Result> AcceptInvite(int serverInviteId)
         {
-            var invite = await serverInviteQueryableRepository.GetQueryable().FirstOrDefaultAsync(si => si.Id == serverInviteId);
+            var invite = await serverInviteQueryableRepository.ExecuteAsync(q => q.FirstOrDefaultAsync(si => si.Id == serverInviteId));
             if (invite is null)
                 return new Result(false, "Invite not found.");
 
-            var server = await serverQueryableRepository.GetQueryable().FirstOrDefaultAsync(s => s.Id == invite.ServerId);
+            var server = await serverQueryableRepository.ExecuteAsync(q => q.FirstOrDefaultAsync(s => s.Id == invite.ServerId));
             if (server is null)
                 return new Result(false, "Server not found.");
 
-            var reciever = await userQueryableRepository.GetQueryable().FirstOrDefaultAsync(u => u.Id == invite.RecieverUserId);
+            var reciever = await userQueryableRepository.ExecuteAsync(q => q.FirstOrDefaultAsync(u => u.Id == invite.RecieverUserId));
             if (reciever is null)
                 return new Result(false, "Reciever not found.");
 

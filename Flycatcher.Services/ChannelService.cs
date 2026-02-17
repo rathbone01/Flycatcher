@@ -34,8 +34,7 @@ namespace Flycatcher.Services
         public async Task<Result> DeleteChannel(int channelId)
         {
             var channel = await channelQueryableRepository
-                .GetQueryable()
-                .FirstOrDefaultAsync(c => c.Id == channelId);
+                .ExecuteAsync(q => q.FirstOrDefaultAsync(c => c.Id == channelId));
 
             if (channel is null)
                 return new Result(false, "Channel not found.");
@@ -55,8 +54,7 @@ namespace Flycatcher.Services
         public async Task<string> GetChannelName(int channelId)
         {
             var channel = await channelQueryableRepository
-                .GetQueryable()
-                .FirstOrDefaultAsync(c => c.Id == channelId);
+                .ExecuteAsync(q => q.FirstOrDefaultAsync(c => c.Id == channelId));
 
             if (channel is null)
                 return string.Empty;

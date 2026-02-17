@@ -4,23 +4,23 @@ using System.Linq.Expressions;
 
 namespace Flycatcher.DataAccess
 {
-    public class QueryableRepository<T> : IQueryableRepository <T> where T : class
+    public class QueryableRepository<T> : IQueryableRepository<T> where T : class
     {
-        private readonly ContextFactory contextFactory;
-        public QueryableRepository(ContextFactory contextFactory)
+        private readonly IDbContextFactory<DataContext> contextFactory;
+        public QueryableRepository(IDbContextFactory<DataContext> contextFactory)
         {
             this.contextFactory = contextFactory;
         }
 
-        public IQueryable<T> GetQueryable()
+        public async Task<TResult> ExecuteAsync<TResult>(Func<IQueryable<T>, Task<TResult>> query, CancellationToken token = default)
         {
-            var dbContext = contextFactory.CreateDbContext();
-            return dbContext.Set<T>();
+            await using var dbContext = contextFactory.CreateDbContext();
+            return await query(dbContext.Set<T>().AsQueryable());
         }
 
         public async Task<T> Create(T entity)
         {
-            var dbContext = contextFactory.CreateDbContext();
+            await using var dbContext = contextFactory.CreateDbContext();
             dbContext.Add(entity);
             await dbContext.SaveChangesAsync();
             return entity;
@@ -28,14 +28,14 @@ namespace Flycatcher.DataAccess
 
         public async Task Delete(T entity)
         {
-            var dbContext = contextFactory.CreateDbContext();
+            await using var dbContext = contextFactory.CreateDbContext();
             dbContext.Remove(entity);
             await dbContext.SaveChangesAsync();
         }
 
         public async Task<T> Update(T entity)
         {
-            var dbContext = contextFactory.CreateDbContext();
+            await using var dbContext = contextFactory.CreateDbContext();
             dbContext.Update(entity);
             await dbContext.SaveChangesAsync();
             return entity;
@@ -43,7 +43,7 @@ namespace Flycatcher.DataAccess
 
         public async Task<int> ExecuteDelete(Expression<Func<T, bool>> predicate)
         {
-            var dbContext = contextFactory.CreateDbContext();
+            await using var dbContext = contextFactory.CreateDbContext();
             return await dbContext.Set<T>().Where(predicate).ExecuteDeleteAsync();
         }
     }

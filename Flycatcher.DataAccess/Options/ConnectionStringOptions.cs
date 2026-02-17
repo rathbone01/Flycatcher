@@ -8,6 +8,7 @@ namespace Flycatcher.DataAccess.Options
 {
     public class ConnectionStringOptions
     {
+        public static string SectionName = "ConnectionStrings";
         public required string Flycatcher { get; set; }
     }
 }

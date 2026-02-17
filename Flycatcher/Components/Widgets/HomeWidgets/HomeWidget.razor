@@ -49,7 +49,7 @@
     private async Task<string> SetRequestsText()
     {
         int inviteCountTotal = 0;
-        inviteCountTotal += friendRequestService.GetFriendRequestsCount((int)userStateService.loggedInUserId!);
+        inviteCountTotal += await friendRequestService.GetFriendRequestsCount((int)userStateService.loggedInUserId!);
         inviteCountTotal += await serverInviteService.GetServerInvitesCount((int)userStateService.loggedInUserId!);
 
         if (inviteCountTotal > 0)
