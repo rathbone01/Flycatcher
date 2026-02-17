@@ -41,7 +41,7 @@
     {
         loggedInUserId = (int)userStateService.loggedInUserId!;
         await RefreshFriends();
-        callbackService.Subscribe(CallbackType.FriendsListUpdated, loggedInUserId, FriendsListUpdatedAsync);
+        callbackService.Subscribe(CallbackType.FriendsListUpdated, CallbackIdGenerator.CreateId(CallbackType.FriendsListUpdated, loggedInUserId), FriendsListUpdatedAsync);
     }
 
     private async Task RefreshFriends()
@@ -62,6 +62,6 @@
 
     public void Dispose()
     {
-        callbackService.Unsubscribe(CallbackType.FriendsListUpdated, loggedInUserId, FriendsListUpdatedAsync);
+        callbackService.Unsubscribe(CallbackType.FriendsListUpdated, CallbackIdGenerator.CreateId(CallbackType.FriendsListUpdated, loggedInUserId), FriendsListUpdatedAsync);
     }
 }

@@ -33,7 +33,7 @@
     private string messageContent = string.Empty;
     private string friendUsername = string.Empty;
     private int loggedInUserId;
-    private int conversationKey;
+    private Guid conversationKey;
 
     private async ValueTask<ItemsProviderResult<Message>> LoadMessagesAsync(ItemsProviderRequest request)
     {

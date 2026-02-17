@@ -50,7 +50,7 @@ namespace Flycatcher.Services
             };
 
             await messageQueryableRepository.Create(message);
-            await callbackService.NotifyAsync(CallbackType.ChannelMessageEvent, channelId);
+            await callbackService.NotifyAsync(CallbackType.ChannelMessageEvent, CallbackIdGenerator.CreateId(CallbackType.ChannelMessageEvent, channelId));
         }
 
         public async Task<Result> DeleteMessage(int messageId)
@@ -64,7 +64,7 @@ namespace Flycatcher.Services
             var channelId = message.ChannelId;
 
             await messageQueryableRepository.Delete(message);
-            await callbackService.NotifyAsync(CallbackType.ChannelMessageEvent, channelId);
+            await callbackService.NotifyAsync(CallbackType.ChannelMessageEvent, CallbackIdGenerator.CreateId(CallbackType.ChannelMessageEvent, channelId));
 
             return new Result(true);
         }

@@ -89,7 +89,7 @@
     protected override async Task OnInitializedAsync()
     {
         await GetServerProperties();
-        callbackService.Subscribe(CallbackType.ServerPropertyUpdated, serverId, GetServerProperties);
+        callbackService.Subscribe(CallbackType.ServerPropertyUpdated, CallbackIdGenerator.CreateId(CallbackType.ServerPropertyUpdated, serverId), GetServerProperties);
     }
 
     private void OnHiddenChanged(bool isLargeScreen)
@@ -239,6 +239,6 @@
 
     public void Dispose()
     {
-        callbackService.Unsubscribe(CallbackType.ServerPropertyUpdated, serverId, GetServerProperties);
+        callbackService.Unsubscribe(CallbackType.ServerPropertyUpdated, CallbackIdGenerator.CreateId(CallbackType.ServerPropertyUpdated, serverId), GetServerProperties);
     }
 }
