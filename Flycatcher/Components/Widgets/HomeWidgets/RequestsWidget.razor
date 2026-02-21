@@ -85,24 +85,28 @@
     private async Task AcceptFriendRequest(int friendRequestId)
     {
         await friendRequestService.AcceptFriendRequest(friendRequestId);
+        await UpdateRequests();
         await InvokeAsync(StateHasChanged);
     }
 
     private async Task DeclineFriendRequest(int friendRequestId)
     {
         await friendRequestService.RejectFriendRequest(friendRequestId);
+        await UpdateRequests();
         await InvokeAsync(StateHasChanged);
     }
 
     private async Task AcceptServerInvite(int serverInviteId)
     {
         await serverInviteService.AcceptInvite(serverInviteId);
+        await UpdateRequests();
         await InvokeAsync(StateHasChanged);
     }
 
     private async Task DeclineServerInvite(int serverInviteId)
     {
         await serverInviteService.DeleteInvite(serverInviteId);
+        await UpdateRequests();
         await InvokeAsync(StateHasChanged);
     }
 

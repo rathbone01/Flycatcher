@@ -85,7 +85,7 @@ namespace Flycatcher.Services
             };
 
             await userServerQueryableRepository.Create(userServer);
-            await callbackService.NotifyAsync(CallbackType.UserServerListUpdated, CallbackIdGenerator.CreateId(CallbackType.UserServerListUpdated, server.Id));
+            await callbackService.NotifyAsync(CallbackType.UserServerListUpdated, CallbackIdGenerator.CreateId(CallbackType.UserServerListUpdated, ownerId));
         }
 
         public async Task<Result> DeleteServer(int serverId)
@@ -95,6 +95,13 @@ namespace Flycatcher.Services
 
             if (server is null)
                 return new Result(false, "Server not found.");
+
+            // Capture member IDs before deletion so we can notify them after
+            var memberUserIds = await userServerQueryableRepository
+                .ExecuteAsync(q => q
+                    .Where(us => us.ServerId == serverId)
+                    .Select(us => us.UserId)
+                    .ToListAsync());
 
             //delete all channels, and messages in those channels
             var channels = await channelQueryableRepository
@@ -110,6 +117,11 @@ namespace Flycatcher.Services
             await channelQueryableRepository.ExecuteDelete(c => c.ServerId == serverId);
             await serverQueryableRepository.Delete(server);
             await callbackService.NotifyAsync(CallbackType.ServerDeleted, CallbackIdGenerator.CreateId(CallbackType.ServerDeleted, serverId));
+
+            foreach (var userId in memberUserIds)
+            {
+                await callbackService.NotifyAsync(CallbackType.UserServerListUpdated, CallbackIdGenerator.CreateId(CallbackType.UserServerListUpdated, userId));
+            }
 
             return new Result(true);
         }

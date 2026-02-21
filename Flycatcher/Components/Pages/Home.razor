@@ -146,15 +146,18 @@
 
     private async Task SelectServer(int serverId)
     {
+        UnsubscribeFromCurrentServer();
         userStateService.selectedServerId = serverId;
         userStateService.selectedChannelId = null;
         userStateService.selectedFriendChat = null;
         _drawerOpen = false;
+        callbackService.Subscribe(CallbackType.ServerDeleted, CallbackIdGenerator.CreateId(CallbackType.ServerDeleted, serverId), OnServerDeleted);
         await InvokeAsync(StateHasChanged);
     }
 
     private void StartDm(int friendId)
     {
+        UnsubscribeFromCurrentServer();
         userStateService.selectedServerId = null;
         userStateService.selectedChannelId = null;
         userStateService.selectedFriendChat = friendId;
@@ -164,11 +167,28 @@
 
     private void GoHome()
     {
+        UnsubscribeFromCurrentServer();
         userStateService.selectedServerId = null;
         userStateService.selectedChannelId = null;
         userStateService.selectedFriendChat = null;
         _drawerOpen = false;
         StateHasChanged();
+    }
+
+    private void UnsubscribeFromCurrentServer()
+    {
+        if (userStateService.selectedServerId is not null)
+        {
+            callbackService.Unsubscribe(CallbackType.ServerDeleted, CallbackIdGenerator.CreateId(CallbackType.ServerDeleted, userStateService.selectedServerId.Value), OnServerDeleted);
+        }
+    }
+
+    private async Task OnServerDeleted()
+    {
+        userStateService.selectedServerId = null;
+        userStateService.selectedChannelId = null;
+        _drawerOpen = false;
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task OnUserBanned()
@@ -204,6 +224,7 @@
 
     private void Logout()
     {
+        UnsubscribeFromCurrentServer();
         if (userStateService.loggedInUserId is not null)
         {
             callbackService.Unsubscribe(CallbackType.UserServerListUpdated, CallbackIdGenerator.CreateId(CallbackType.UserServerListUpdated, userStateService.loggedInUserId.Value), ServerListUpdated);
@@ -221,6 +242,7 @@
 
     public void Dispose()
     {
+        UnsubscribeFromCurrentServer();
         if (userStateService.loggedInUserId is null)
             return;
 
