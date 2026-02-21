@@ -14,9 +14,10 @@ namespace Flycatcher.Services
         private readonly IQueryableRepository<UserServer> userServerQueryableRepository;
         private readonly IQueryableRepository<UserFriend> userFriendQueryableRepository;
         private readonly IQueryableRepository<FriendRequest> friendRequestQueryableRepository;
+        private readonly IQueryableRepository<UserBan> userBanQueryableRepository;
         private readonly CallbackService callbackService;
 
-        public UserService(IQueryableRepository<User> userQueryableRepository, IQueryableRepository<SiteAdmin> siteAdminQueryableRepository, IQueryableRepository<UserServer> userServerQueryableRepository, IQueryableRepository<UserFriend> userFriendQueryableRepository, IQueryableRepository<FriendRequest> friendRequestQueryableRepository, CallbackService callbackService)
+        public UserService(IQueryableRepository<User> userQueryableRepository, IQueryableRepository<SiteAdmin> siteAdminQueryableRepository, IQueryableRepository<UserServer> userServerQueryableRepository, IQueryableRepository<UserFriend> userFriendQueryableRepository, IQueryableRepository<FriendRequest> friendRequestQueryableRepository, IQueryableRepository<UserBan> userBanQueryableRepository, CallbackService callbackService)
         {
             this.userQueryableRepository = userQueryableRepository;
             this.callbackService = callbackService;
@@ -24,6 +25,7 @@ namespace Flycatcher.Services
             this.userServerQueryableRepository = userServerQueryableRepository;
             this.userFriendQueryableRepository = userFriendQueryableRepository;
             this.friendRequestQueryableRepository = friendRequestQueryableRepository;
+            this.userBanQueryableRepository = userBanQueryableRepository;
         }
 
         public async Task<string> GetUsername(int userId)
@@ -57,12 +59,29 @@ namespace Flycatcher.Services
             return siteAdmin != null;
         }
 
+        public async Task<bool> IsUserGloballyBannedAsync(int userId)
+        {
+            var userBan = await userBanQueryableRepository
+                .ExecuteAsync(q => q.FirstOrDefaultAsync(ub => ub.UserId == userId));
+
+            return userBan != null;
+        }
+
         public async Task<LoginResult> Login(string username, string hashedPassword)
         {
             var user = await userQueryableRepository
                 .ExecuteAsync(q => q.FirstOrDefaultAsync(u => u.Username == username));
 
-            return Login(user, hashedPassword);
+            if (user is null)
+                return new LoginResult(false, "User not found.");
+
+            if (user.PasswordHash != hashedPassword)
+                return new LoginResult(false, "Incorrect password");
+
+            // Allow banned users to log in so they can see the ban screen and submit appeals
+            // The ban check is handled in Home.razor after login
+
+            return new LoginResult(user.Id);
         }
 
         private LoginResult Login(User? user, string hashedPassword)

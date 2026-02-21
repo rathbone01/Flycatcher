@@ -1,30 +1,48 @@
 ﻿@implements IDisposable
 @using Flycatcher.DataAccess
 @using Flycatcher.Models.Database
+@using Flycatcher.Services
+@using Flycatcher.Services.Enumerations
 @using Microsoft.EntityFrameworkCore
 @inject UserStateService userStateService
 @inject ServerService serverService
 @inject ChannelService channelService
 @inject MessageService messageService
+@inject MessageValidationService MessageValidationService
+@inject PermissionService permissionService
+@inject UserBanService userBanService
+@inject UserTimeoutService userTimeoutService
 @inject IServiceScopeFactory serviceScopeFactory
 @inject CallbackService callbackService
 @inject IDbContextFactory<DataContext> contextFactory
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
 
 
 <MudText Typo="Typo.h6">
     @channelName
 </MudText>
 
-<div class="d-flex align-items-center" style="width: 100%;">
-    <MudTextField @bind-Text="@messageContent" OnKeyUp="KeyUp" TextUpdateSuppression="false" Immediate="true" T="string" Label="Send Message" Variant="Variant.Outlined" AutoGrow MaxLines="4" Class="flex-grow-1 me-2" />
-    <MudHidden Breakpoint="Breakpoint.SmAndDown" Invert="true">
-        <MudFab OnClick="SendMessage" Style="margin-top: 12px;" Color="Color.Secondary" StartIcon="@Icons.Material.Rounded.Send" Size="Size.Medium" />
-    </MudHidden>
+<div style="width: 100%;">
+    <div class="d-flex align-items-center" style="width: 100%;">
+        <MudTextField @bind-Text="@messageContent" OnKeyUp="KeyUp" TextUpdateSuppression="false" Immediate="true" T="string" Label="Send Message" Variant="Variant.Outlined" AutoGrow MaxLines="4" Class="flex-grow-1 me-2" />
+        <MudHidden Breakpoint="Breakpoint.SmAndDown" Invert="true">
+            <MudFab OnClick="SendMessage" Disabled="@(!MessageValidationService.IsMessageValid(messageContent))" Style="margin-top: 12px;" Color="Color.Secondary" StartIcon="@Icons.Material.Rounded.Send" Size="Size.Medium" />
+        </MudHidden>
+    </div>
+    <div class="d-flex justify-content-end">
+        <MudText Typo="Typo.caption" Color="@GetCharacterCountColor()">
+            @MessageValidationService.GetCharacterCount(messageContent)/4000
+        </MudText>
+    </div>
 </div>
 
 <div tyle="width: 100%;">
     <Virtualize Context="message" ItemsProvider="LoadMessagesAsync" @ref="virtualizeRef" OverscanCount="8">
-        <MessageWidget Message="message" />
+        <MessageWidget Message="message"
+                       LoggedInUserId="loggedInUserId"
+                       CanDeleteOthersMessages="canDeleteOthersMessages"
+                       OnDeleteRequested="HandleDeleteMessage" />
     </Virtualize>
 </div>
 
@@ -33,7 +51,13 @@
     private string messageContent = string.Empty;
     private int totalMessageCount = 0;
     private int channelId;
+    private int serverId;
+    private int loggedInUserId;
     private string channelName = string.Empty;
+    private bool canDeleteOthersMessages = false;
+    private bool canSendMessages = false;
+    private bool isBanned = false;
+    private bool isTimedOut = false;
 
     private async ValueTask<ItemsProviderResult<Message>> LoadMessagesAsync(ItemsProviderRequest request)
     {
@@ -49,7 +73,30 @@
     protected override async Task OnInitializedAsync()
     {
         channelId = (int)userStateService.selectedChannelId!;
+        serverId = (int)userStateService.selectedServerId!;
+        loggedInUserId = (int)userStateService.loggedInUserId!;
         channelName = await channelService.GetChannelName(channelId);
+
+        // Check if user has permission to delete others' messages
+        canDeleteOthersMessages = await permissionService.HasChannelPermissionAsync(
+            loggedInUserId,
+            channelId,
+            serverId,
+            PermissionNames.DeleteOthersMessages
+        );
+
+        // Check if user can send messages
+        canSendMessages = await permissionService.HasChannelPermissionAsync(
+            loggedInUserId,
+            channelId,
+            serverId,
+            PermissionNames.SendMessages
+        );
+
+        // Check if user is banned or timed out
+        isBanned = await userBanService.IsUserBannedAsync(loggedInUserId);
+        isTimedOut = await userTimeoutService.IsUserTimedOutAsync(loggedInUserId, serverId);
+
         callbackService.Subscribe(CallbackType.ChannelMessageEvent, CallbackIdGenerator.CreateId(CallbackType.ChannelMessageEvent, channelId), GetNewMessagesAsync);
     }
 
@@ -61,11 +108,36 @@
         }
     }
 
+    private Color GetCharacterCountColor()
+    {
+        var count = MessageValidationService.GetCharacterCount(messageContent);
+        if (count >= 4000)
+            return Color.Error;
+        if (count >= 3200)
+            return Color.Warning;
+        return Color.Default;
+    }
+
     private async Task SendMessage()
     {
-        if (string.IsNullOrEmpty(messageContent.Trim()))
+        if (!MessageValidationService.IsMessageValid(messageContent))
+            return;
+
+        if (isBanned)
         {
-            messageContent = string.Empty;
+            Snackbar.Add("You are banned from this platform.", Severity.Error);
+            return;
+        }
+
+        if (isTimedOut)
+        {
+            Snackbar.Add("You are currently timed out in this server.", Severity.Error);
+            return;
+        }
+
+        if (!canSendMessages)
+        {
+            Snackbar.Add("You do not have permission to send messages in this channel.", Severity.Error);
             return;
         }
 
@@ -75,6 +147,22 @@
         StateHasChanged();
     }
 
+
+    private async Task HandleDeleteMessage(int messageId)
+    {
+        var error = await messageService.SoftDeleteMessageAsync(messageId, loggedInUserId);
+
+        if (error != null)
+        {
+            Snackbar.Add(error, Severity.Error);
+        }
+        else
+        {
+            Snackbar.Add("Message deleted successfully", Severity.Success);
+        }
+
+        // Messages will refresh automatically via callback
+    }
 
     private async Task GetNewMessagesAsync()
     {

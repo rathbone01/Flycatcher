@@ -1,11 +1,13 @@
 ﻿@implements IDisposable
 @page "/"
 @using System.Reflection
+@using Flycatcher.Models.Database
 @inject UserService userService
 @inject ServerService serverService
 @inject ChannelService channelService
 @inject MessageService messageService
 @inject UserStateService userStateService
+@inject UserBanService userBanService
 @inject CallbackService callbackService
 @inject IDialogService dialogService
 
@@ -14,6 +16,12 @@
     <p>@GetInformationalVersion()</p>
     <p>@GetVersion()</p>
     <LoginPage OnLogin="OnLoginSuccess" />
+    return;
+}
+
+@if (currentBan is not null)
+{
+    <BannedWidget Ban="currentBan" />
     return;
 }
 
@@ -64,6 +72,7 @@
 @code {
     bool _drawerOpen = false;
     private List<Server> servers = new List<Server>();
+    private UserBan? currentBan = null;
 
     private string GetInformationalVersion()
     {
@@ -81,6 +90,20 @@
     {
         userStateService.loggedInUserId = userId;
         userStateService.loggedInUsername = await userService.GetUsername(userId);
+
+        // Subscribe to ban-related callbacks
+        callbackService.Subscribe(CallbackType.UserBanned, CallbackIdGenerator.CreateId(CallbackType.UserBanned, userId), OnUserBanned);
+        callbackService.Subscribe(CallbackType.AppealReviewed, CallbackIdGenerator.CreateId(CallbackType.AppealReviewed, userId), OnAppealReviewed);
+
+        // Check if user is banned
+        var isBanned = await userBanService.IsUserBannedAsync(userId);
+        if (isBanned)
+        {
+            currentBan = await userBanService.GetUserBanAsync(userId);
+            StateHasChanged();
+            return;
+        }
+
         servers = await userService.GetUserServers((int)userStateService.loggedInUserId!);
 
         callbackService.Subscribe(CallbackType.UserServerListUpdated, CallbackIdGenerator.CreateId(CallbackType.UserServerListUpdated, userStateService.loggedInUserId!.Value), ServerListUpdated);
@@ -148,11 +171,44 @@
         StateHasChanged();
     }
 
+    private async Task OnUserBanned()
+    {
+        if (userStateService.loggedInUserId is null)
+            return;
+
+        currentBan = await userBanService.GetUserBanAsync(userStateService.loggedInUserId.Value);
+        StateHasChanged();
+    }
+
+    private async Task OnAppealReviewed()
+    {
+        if (userStateService.loggedInUserId is null)
+            return;
+
+        var isBanned = await userBanService.IsUserBannedAsync(userStateService.loggedInUserId.Value);
+        if (!isBanned)
+        {
+            // Appeal was approved, user is no longer banned
+            currentBan = null;
+            servers = await userService.GetUserServers((int)userStateService.loggedInUserId!);
+            callbackService.Subscribe(CallbackType.UserServerListUpdated, CallbackIdGenerator.CreateId(CallbackType.UserServerListUpdated, userStateService.loggedInUserId!.Value), ServerListUpdated);
+        }
+        else
+        {
+            // Appeal was denied, update the ban status
+            currentBan = await userBanService.GetUserBanAsync(userStateService.loggedInUserId.Value);
+        }
+
+        StateHasChanged();
+    }
+
     private void Logout()
     {
         if (userStateService.loggedInUserId is not null)
         {
             callbackService.Unsubscribe(CallbackType.UserServerListUpdated, CallbackIdGenerator.CreateId(CallbackType.UserServerListUpdated, userStateService.loggedInUserId.Value), ServerListUpdated);
+            callbackService.Unsubscribe(CallbackType.UserBanned, CallbackIdGenerator.CreateId(CallbackType.UserBanned, userStateService.loggedInUserId.Value), OnUserBanned);
+            callbackService.Unsubscribe(CallbackType.AppealReviewed, CallbackIdGenerator.CreateId(CallbackType.AppealReviewed, userStateService.loggedInUserId.Value), OnAppealReviewed);
         }
 
         userStateService.loggedInUsername = null;
@@ -160,6 +216,7 @@
         userStateService.selectedServerId = null;
         userStateService.selectedChannelId = null;
         userStateService.selectedFriendChat = null;
+        currentBan = null;
     }
 
     public void Dispose()
@@ -168,5 +225,7 @@
             return;
 
         callbackService.Unsubscribe(CallbackType.UserServerListUpdated, CallbackIdGenerator.CreateId(CallbackType.UserServerListUpdated, userStateService.loggedInUserId.Value), ServerListUpdated);
+        callbackService.Unsubscribe(CallbackType.UserBanned, CallbackIdGenerator.CreateId(CallbackType.UserBanned, userStateService.loggedInUserId.Value), OnUserBanned);
+        callbackService.Unsubscribe(CallbackType.AppealReviewed, CallbackIdGenerator.CreateId(CallbackType.AppealReviewed, userStateService.loggedInUserId.Value), OnAppealReviewed);
     }
 }

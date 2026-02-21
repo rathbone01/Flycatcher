@@ -1,4 +1,6 @@
-﻿@implements IDisposable
+﻿@using Flycatcher.Components.Dialogs
+@using Flycatcher.Services.Enumerations
+@implements IDisposable
 @inject UserStateService userStateService
 @inject ServerService serverService
 @inject UserService userService
@@ -8,6 +10,7 @@
 @inject IDialogService dialogService
 @inject IBrowserViewportService browserViewportService
 @inject CallbackService callbackService
+@inject PermissionService permissionService
 
 @if (!doesServerExist)
 {
@@ -18,18 +21,25 @@
 <MudDrawer Open="leftDrawerOpen" OpenChanged="LeftDrawerOpenChanged" ClipMode="DrawerClipMode.Always" Variant="DrawerVariant.Responsive">
     <MudDrawerHeader>
         <MudText Typo="Typo.h6">@serverName</MudText>
-        @if (isServerOwner)
+        @if (isServerOwner || canManageRoles)
         {
             <MudMenu Icon="@Icons.Material.Filled.Settings"
                      Color="Color.Primary"
                      AriaLabel="Open user menu">
-                <MudMenuItem OnClick="InviteUser" Label="Invite User" />
-                <MudMenuItem OnClick="DeleteServer" Label="Delete Server" />
+                @if (canManageRoles)
+                {
+                    <MudMenuItem OnClick="OpenManageRolesDialog" Label="Manage Roles" />
+                }
+                @if (isServerOwner)
+                {
+                    <MudMenuItem OnClick="InviteUser" Label="Invite User" />
+                    <MudMenuItem OnClick="DeleteServer" Label="Delete Server" />
+                }
             </MudMenu>
         }
     </MudDrawerHeader>
     <MudNavMenu Style="display: flex; flex-direction: column;">
-        @if (isServerOwner)
+        @if (canAddChannels)
         {
             <div style="justify-content: center; text-align: center;">
                 <MudButton Style="width: 70%;" Variant="Variant.Filled" OnClick="CreateChannel">Create Channel</MudButton>
@@ -39,13 +49,21 @@
         }
         @foreach (var channel in serverChannels)
         {
-            @if (channel.Id == userStateService.selectedChannelId)
-            {
-                <MudButton Color="Color.Primary" Variant="Variant.Text">@channel.Name</MudButton>
-                continue;
-            }
-
-            <MudButton Variant="Variant.Text" OnClick="() => SelectChannel(channel.Id)">@channel.Name</MudButton>
+            <div style="display: flex; align-items: center;">
+                @if (channel.Id == userStateService.selectedChannelId)
+                {
+                    <MudButton Color="Color.Primary" Variant="Variant.Text" Style="flex: 1;">@channel.Name</MudButton>
+                }
+                else
+                {
+                    <MudButton Variant="Variant.Text" OnClick="() => SelectChannel(channel.Id)" Style="flex: 1;">@channel.Name</MudButton>
+                }
+                @if (canEditChannels)
+                {
+                    <MudIconButton Icon="@Icons.Material.Filled.Settings" Size="Size.Small"
+                                   OnClick="() => OpenChannelPermissionsDialog(channel.Id, channel.Name)" />
+                }
+            </div>
         }
     </MudNavMenu>
 </MudDrawer>
@@ -82,6 +100,11 @@
     private List<Channel> serverChannels = new List<Channel>();
     private bool doesServerExist = true;
     private bool isServerOwner => (int)userStateService.loggedInUserId! == serverOwnerId;
+
+    private bool canAddChannels = false;
+    private bool canEditServerSettings = false;
+    private bool canManageRoles = false;
+    private bool canEditChannels = false;
 
     [Parameter]
     public Action? ServerDeletedCallback { get; set; }
@@ -217,6 +240,24 @@
         return (string?)result?.Data ?? null;
     }
 
+    private async Task OpenManageRolesDialog()
+    {
+        var parameters = new DialogParameters { { "ServerId", serverId } };
+        await dialogService.ShowAsync<ManageRolesDialog>("Manage Roles", parameters);
+        await GetServerProperties();
+    }
+
+    private async Task OpenChannelPermissionsDialog(int channelId, string channelName)
+    {
+        var parameters = new DialogParameters
+        {
+            { "ChannelId", channelId },
+            { "ChannelName", channelName },
+            { "ServerId", serverId }
+        };
+        await dialogService.ShowAsync<ChannelPermissionsDialog>($"#{channelName} Permissions", parameters);
+    }
+
     public async Task GetServerProperties()
     {
         serverId = (int)userStateService.selectedServerId!;
@@ -233,6 +274,12 @@
 
         serverName = await serverService.GetServerName(serverId);
         serverChannels = await serverService.GetServerChannels(serverId);
+
+        var userId = userStateService.loggedInUserId!.Value;
+        canAddChannels = await permissionService.HasServerPermissionAsync(userId, serverId, PermissionNames.AddChannels);
+        canEditServerSettings = await permissionService.HasServerPermissionAsync(userId, serverId, PermissionNames.EditServerSettings);
+        canManageRoles = await permissionService.HasServerPermissionAsync(userId, serverId, PermissionNames.ManageRoles);
+        canEditChannels = await permissionService.HasServerPermissionAsync(userId, serverId, PermissionNames.EditChannels);
 
         await InvokeAsync(StateHasChanged);
     }

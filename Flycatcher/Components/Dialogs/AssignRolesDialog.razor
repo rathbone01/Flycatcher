@@ -1,0 +1,172 @@
+@inject UserRoleService UserRoleService
+@inject RoleService RoleService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.ManageAccounts" Class="mr-3 mb-n1" />
+            Manage Roles
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText Class="mb-4">Assign roles to: <strong>@TargetUsername</strong></MudText>
+
+        @if (_isLoading)
+        {
+            <MudProgressCircular Indeterminate="true" />
+        }
+        else if (_serverRoles.Count == 0)
+        {
+            <MudAlert Severity="Severity.Info">No roles available on this server.</MudAlert>
+        }
+        else
+        {
+            <MudText Typo="Typo.body2" Class="mb-3">Select roles to assign to this user:</MudText>
+
+            @foreach (var role in _serverRoles)
+            {
+                <div class="mb-2">
+                    <MudCheckBox
+                        @bind-Value="@_selectedRoleIds[role.Id]"
+                        Color="Color.Primary"
+                        Disabled="_isSaving || (_selectedRoleCount >= 16 && !_selectedRoleIds[role.Id])">
+                        @if (!string.IsNullOrEmpty(role.ColorHex))
+                        {
+                            <span style="color: @role.ColorHex; font-weight: 600;">@role.Name</span>
+                        }
+                        else
+                        {
+                            <span>@role.Name</span>
+                        }
+                    </MudCheckBox>
+                </div>
+            }
+
+            @if (_selectedRoleCount >= 16)
+            {
+                <MudAlert Severity="Severity.Warning" Class="mt-3">
+                    Maximum of 16 roles reached. Deselect a role to select another.
+                </MudAlert>
+            }
+            else
+            {
+                <MudText Typo="Typo.caption" Class="mt-3">
+                    @_selectedRoleCount / 16 roles selected
+                </MudText>
+            }
+        }
+
+        @if (!string.IsNullOrEmpty(_errorMessage))
+        {
+            <MudAlert Severity="Severity.Error" Class="mt-4">@_errorMessage</MudAlert>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Disabled="_isSaving">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="SaveRoles" Disabled="_isSaving || _isLoading">
+            @if (_isSaving)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+            }
+            else
+            {
+                <span>Save</span>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    [Parameter]
+    public int TargetUserId { get; set; }
+
+    [Parameter]
+    public string TargetUsername { get; set; } = string.Empty;
+
+    [Parameter]
+    public int ServerId { get; set; }
+
+    private List<Role> _serverRoles = new List<Role>();
+    private Dictionary<int, bool> _selectedRoleIds = new Dictionary<int, bool>();
+    private bool _isLoading = true;
+    private bool _isSaving = false;
+    private string _errorMessage = string.Empty;
+
+    private int _selectedRoleCount => _selectedRoleIds.Count(kvp => kvp.Value);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRolesAsync();
+    }
+
+    private async Task LoadRolesAsync()
+    {
+        _isLoading = true;
+        _errorMessage = string.Empty;
+
+        try
+        {
+            // Load all server roles
+            _serverRoles = await RoleService.GetServerRolesAsync(ServerId);
+
+            // Load user's current roles
+            var userRoles = await UserRoleService.GetUserRolesAsync(TargetUserId, ServerId);
+            var userRoleIds = userRoles.Select(ur => ur.RoleId).ToHashSet();
+
+            // Initialize the selection dictionary
+            _selectedRoleIds = _serverRoles.ToDictionary(
+                role => role.Id,
+                role => userRoleIds.Contains(role.Id)
+            );
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Failed to load roles: {ex.Message}";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task SaveRoles()
+    {
+        _errorMessage = string.Empty;
+        _isSaving = true;
+
+        try
+        {
+            // Get the list of selected role IDs
+            var selectedRoleIds = _selectedRoleIds
+                .Where(kvp => kvp.Value)
+                .Select(kvp => kvp.Key)
+                .ToList();
+
+            // Call the service to update user roles
+            var error = await UserRoleService.SetUserRolesAsync(TargetUserId, ServerId, selectedRoleIds);
+
+            if (error != null)
+            {
+                // Service returned an error message
+                _errorMessage = error;
+                _isSaving = false;
+                return;
+            }
+
+            // Success
+            Snackbar.Add($"Roles updated successfully for {TargetUsername}.", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Failed to save roles: {ex.Message}";
+            _isSaving = false;
+        }
+    }
+}

@@ -5,6 +5,7 @@
 @inject UserStateService userStateService
 @inject UserService userService
 @inject DirectMessageService directMessageService
+@inject MessageValidationService MessageValidationService
 @inject CallbackService callbackService
 @inject IDbContextFactory<DataContext> contextFactory
 
@@ -13,11 +14,18 @@
         @friendUsername
     </MudText>
 
-    <div class="d-flex align-items-center" style="width: 100%;">
-        <MudTextField @bind-Text="@messageContent" OnKeyUp="KeyUp" TextUpdateSuppression="false" Immediate="true" T="string" Label="Send Message" Variant="Variant.Outlined" AutoGrow MaxLines="4" Class="flex-grow-1 me-2" />
-        <MudHidden Breakpoint="Breakpoint.SmAndDown" Invert="true">
-            <MudFab OnClick="SendMessage" Style="margin-top: 12px;" Color="Color.Secondary" StartIcon="@Icons.Material.Rounded.Send" Size="Size.Medium" />
-        </MudHidden>
+    <div style="width: 100%;">
+        <div class="d-flex align-items-center" style="width: 100%;">
+            <MudTextField @bind-Text="@messageContent" OnKeyUp="KeyUp" TextUpdateSuppression="false" Immediate="true" T="string" Label="Send Message" Variant="Variant.Outlined" AutoGrow MaxLines="4" Class="flex-grow-1 me-2" />
+            <MudHidden Breakpoint="Breakpoint.SmAndDown" Invert="true">
+                <MudFab OnClick="SendMessage" Disabled="@(!MessageValidationService.IsMessageValid(messageContent))" Style="margin-top: 12px;" Color="Color.Secondary" StartIcon="@Icons.Material.Rounded.Send" Size="Size.Medium" />
+            </MudHidden>
+        </div>
+        <div class="d-flex justify-content-end">
+            <MudText Typo="Typo.caption" Color="@GetCharacterCountColor()">
+                @MessageValidationService.GetCharacterCount(messageContent)/4000
+            </MudText>
+        </div>
     </div>
 
     <div style="width: 100%;">
@@ -65,11 +73,20 @@
         }
     }
 
+    private Color GetCharacterCountColor()
+    {
+        var count = MessageValidationService.GetCharacterCount(messageContent);
+        if (count >= 4000)
+            return Color.Error;
+        if (count >= 3200)
+            return Color.Warning;
+        return Color.Default;
+    }
+
     private async Task SendMessage()
     {
-        if (string.IsNullOrEmpty(messageContent.Trim()))
+        if (!MessageValidationService.IsMessageValid(messageContent))
         {
-            messageContent = string.Empty;
             return;
         }
 

@@ -1,0 +1,93 @@
+@inject UserTimeoutService userTimeoutService
+@inject UserStateService userStateService
+@inject ISnackbar snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudText Typo="Typo.body1" Class="mb-4">Timeout user: <strong>@TargetUsername</strong></MudText>
+
+        <MudTextField @bind-Value="_reason"
+                      Label="Reason"
+                      Required="true"
+                      MaxLength="500"
+                      Variant="Variant.Outlined"
+                      Lines="3"
+                      Class="mb-4" />
+
+        <MudSelect @bind-Value="_durationMinutes"
+                   Label="Duration"
+                   Variant="Variant.Outlined"
+                   Class="mb-4">
+            <MudSelectItem Value="5">5 minutes</MudSelectItem>
+            <MudSelectItem Value="10">10 minutes</MudSelectItem>
+            <MudSelectItem Value="30">30 minutes</MudSelectItem>
+            <MudSelectItem Value="60">1 hour</MudSelectItem>
+            <MudSelectItem Value="1440">1 day</MudSelectItem>
+        </MudSelect>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Warning" Variant="Variant.Filled" OnClick="SubmitTimeout" Disabled="@string.IsNullOrWhiteSpace(_reason)">Timeout</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    [Parameter]
+    public int TargetUserId { get; set; }
+
+    [Parameter]
+    public string TargetUsername { get; set; } = string.Empty;
+
+    [Parameter]
+    public int ServerId { get; set; }
+
+    private string _reason = "";
+    private int _durationMinutes = 60;
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private async Task SubmitTimeout()
+    {
+        if (string.IsNullOrWhiteSpace(_reason))
+        {
+            snackbar.Add("Reason is required", Severity.Error);
+            return;
+        }
+
+        var error = await userTimeoutService.TimeoutUserAsync(
+            TargetUserId,
+            ServerId,
+            userStateService.loggedInUserId!.Value,
+            _reason,
+            _durationMinutes);
+
+        if (error != null)
+        {
+            snackbar.Add(error, Severity.Error);
+        }
+        else
+        {
+            snackbar.Add($"User {TargetUsername} has been timed out for {GetDurationText()}", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+    }
+
+    private string GetDurationText()
+    {
+        return _durationMinutes switch
+        {
+            5 => "5 minutes",
+            10 => "10 minutes",
+            30 => "30 minutes",
+            60 => "1 hour",
+            1440 => "1 day",
+            _ => $"{_durationMinutes} minutes"
+        };
+    }
+}

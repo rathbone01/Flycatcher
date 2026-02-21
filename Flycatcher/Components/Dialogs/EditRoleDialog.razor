@@ -1,0 +1,168 @@
+@using Flycatcher.Services
+@using Flycatcher.Models.Database
+@using Flycatcher.Services.Enumerations
+@using MudBlazor
+@inject RoleService roleService
+@inject ISnackbar snackbar
+@inject IDialogService dialogService
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">Edit Role</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField @bind-Value="_roleName"
+                      Label="Role Name"
+                      Required="true"
+                      MaxLength="32"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense" />
+
+        <MudTextField @bind-Value="_colorHex"
+                      Label="Color (hex, e.g. #FF5733)"
+                      Placeholder="#FFFFFF"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Class="mt-2" />
+
+        <MudText Typo="Typo.h6" Class="mt-4 mb-2">Permissions</MudText>
+
+        <MudStack Spacing="1">
+            <MudCheckBox @bind-Value="_permissions.SendMessages"
+                         Label="Send Messages"
+                         Color="Color.Primary" />
+
+            <MudCheckBox @bind-Value="_permissions.DeleteOthersMessages"
+                         Label="Delete Others' Messages"
+                         Color="Color.Primary" />
+
+            <MudCheckBox @bind-Value="_permissions.TimeoutUser"
+                         Label="Timeout User"
+                         Color="Color.Primary" />
+
+            <MudCheckBox @bind-Value="_permissions.BanUser"
+                         Label="Ban User"
+                         Color="Color.Primary" />
+
+            <MudCheckBox @bind-Value="_permissions.EditChannels"
+                         Label="Edit Channels"
+                         Color="Color.Primary" />
+
+            <MudCheckBox @bind-Value="_permissions.AddChannels"
+                         Label="Add Channels"
+                         Color="Color.Primary" />
+
+            <MudCheckBox @bind-Value="_permissions.EditServerSettings"
+                         Label="Edit Server Settings"
+                         Color="Color.Primary" />
+
+            <MudCheckBox @bind-Value="_permissions.ManageRoles"
+                         Label="Manage Roles"
+                         Color="Color.Primary" />
+
+            <MudCheckBox @bind-Value="_permissions.AssignRoles"
+                         Label="Assign Roles"
+                         Color="Color.Primary" />
+        </MudStack>
+
+        <MudDivider Class="my-4" />
+
+        <MudButton Color="Color.Error"
+                   Variant="Variant.Outlined"
+                   OnClick="ConfirmDeleteRole"
+                   FullWidth="true">
+            Delete Role
+        </MudButton>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Success" OnClick="SaveRole">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    [Parameter]
+    public Role ExistingRole { get; set; } = null!;
+
+    private string _roleName = string.Empty;
+    private string _colorHex = string.Empty;
+    private RolePermissions _permissions = new RolePermissions();
+
+    protected override void OnInitialized()
+    {
+        _roleName = ExistingRole.Name;
+        _colorHex = ExistingRole.ColorHex ?? string.Empty;
+
+        if (ExistingRole.Permissions is not null)
+        {
+            _permissions.SendMessages = ExistingRole.Permissions.SendMessages;
+            _permissions.DeleteOthersMessages = ExistingRole.Permissions.DeleteOthersMessages;
+            _permissions.TimeoutUser = ExistingRole.Permissions.TimeoutUser;
+            _permissions.BanUser = ExistingRole.Permissions.BanUser;
+            _permissions.EditChannels = ExistingRole.Permissions.EditChannels;
+            _permissions.AddChannels = ExistingRole.Permissions.AddChannels;
+            _permissions.EditServerSettings = ExistingRole.Permissions.EditServerSettings;
+            _permissions.ManageRoles = ExistingRole.Permissions.ManageRoles;
+            _permissions.AssignRoles = ExistingRole.Permissions.AssignRoles;
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task SaveRole()
+    {
+        if (string.IsNullOrWhiteSpace(_roleName))
+        {
+            snackbar.Add("Role name is required.", Severity.Error);
+            return;
+        }
+
+        var colorToSave = string.IsNullOrWhiteSpace(_colorHex) ? null : _colorHex;
+
+        var updateError = await roleService.UpdateRoleAsync(ExistingRole.Id, _roleName, colorToSave, ExistingRole.Position);
+        if (updateError is not null)
+        {
+            snackbar.Add(updateError, Severity.Error);
+            return;
+        }
+
+        var permissionsError = await roleService.UpdateRolePermissionsAsync(ExistingRole.Id, _permissions);
+        if (permissionsError is not null)
+        {
+            snackbar.Add(permissionsError, Severity.Error);
+            return;
+        }
+
+        snackbar.Add("Role updated successfully.", Severity.Success);
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+
+    private async Task ConfirmDeleteRole()
+    {
+        var userCount = await roleService.GetRoleUserCountAsync(ExistingRole.Id);
+
+        var parameters = new DialogParameters();
+        parameters.Add("Title", "Delete Role");
+        parameters.Add("Message", $"Are you sure you want to delete this role? {userCount} user(s) will be affected.");
+        parameters.Add("ItemName", ExistingRole.Name);
+
+        var dialog = await dialogService.ShowAsync<DeleteDialog>("Delete Role", parameters);
+        var result = await dialog.Result;
+
+        if (result is not null && result.Data is bool confirmed && confirmed)
+        {
+            var deleteError = await roleService.DeleteRoleAsync(ExistingRole.Id);
+            if (deleteError is not null)
+            {
+                snackbar.Add(deleteError, Severity.Error);
+                return;
+            }
+
+            snackbar.Add("Role deleted successfully.", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(false));
+        }
+    }
+}

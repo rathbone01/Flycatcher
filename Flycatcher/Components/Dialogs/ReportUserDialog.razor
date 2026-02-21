@@ -1,0 +1,97 @@
+@inject UserReportService UserReportService
+@inject UserStateService UserStateService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Report" Class="mr-3 mb-n1" />
+            Report User
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText Class="mb-4">Report user: <strong>@ReportedUsername</strong></MudText>
+
+        <MudTextField
+            @bind-Value="reason"
+            Label="Reason for report"
+            Lines="5"
+            Variant="Variant.Outlined"
+            Immediate="true"
+            Required="true"
+            Counter="500"
+            MaxLength="500"
+            HelperText="@($"{reason.Length}/500 characters")" />
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <MudAlert Severity="Severity.Error" Class="mt-4">@errorMessage</MudAlert>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Error" OnClick="Submit">Submit Report</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public int ReportedUserId { get; set; }
+
+    [Parameter]
+    public string ReportedUsername { get; set; } = string.Empty;
+
+    private string reason = string.Empty;
+    private string errorMessage = string.Empty;
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task Submit()
+    {
+        errorMessage = string.Empty;
+
+        // Validate reason length
+        var trimmedReason = reason.Trim();
+        if (string.IsNullOrWhiteSpace(trimmedReason))
+        {
+            errorMessage = "Reason is required.";
+            return;
+        }
+
+        if (trimmedReason.Length < 10)
+        {
+            errorMessage = "Reason must be at least 10 characters.";
+            return;
+        }
+
+        if (trimmedReason.Length > 500)
+        {
+            errorMessage = "Reason must not exceed 500 characters.";
+            return;
+        }
+
+        // Call service
+        var loggedInUserId = UserStateService.loggedInUserId;
+        if (loggedInUserId is null)
+        {
+            errorMessage = "You must be logged in to report a user.";
+            return;
+        }
+
+        var result = await UserReportService.ReportUserAsync((int)loggedInUserId, ReportedUserId, trimmedReason);
+
+        if (result != null)
+        {
+            // Service returned an error message
+            errorMessage = result;
+            return;
+        }
+
+        // Success
+        Snackbar.Add("User reported. Thank you for helping keep our community safe.", Severity.Success);
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+}

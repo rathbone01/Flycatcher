@@ -22,6 +22,15 @@ namespace Flycatcher.Configuration
             services.AddScoped<FriendRequestService>();
             services.AddSingleton<CallbackService>();
             services.AddScoped<DirectMessageService>();
+            services.AddScoped<RoleService>();
+            services.AddScoped<UserRoleService>();
+            services.AddScoped<PermissionService>();
+            services.AddScoped<ChannelPermissionService>();
+            services.AddScoped<UserReportService>();
+            services.AddScoped<UserBanService>();
+            services.AddScoped<UserTimeoutService>();
+            services.AddScoped<MessageValidationService>();
+            services.AddScoped<BrowserTimeService>();
 
             return services;
         }

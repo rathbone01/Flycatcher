@@ -1,0 +1,117 @@
+@using Flycatcher.Services
+@using Flycatcher.Models.Database
+@using Flycatcher.Services.Enumerations
+@using MudBlazor
+@inject RoleService roleService
+@inject ISnackbar snackbar
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">Create Role</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField @bind-Value="_roleName"
+                      Label="Role Name"
+                      Required="true"
+                      MaxLength="32"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense" />
+
+        <MudTextField @bind-Value="_colorHex"
+                      Label="Color (hex, e.g. #FF5733)"
+                      Placeholder="#FFFFFF"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Class="mt-2" />
+
+        <MudText Typo="Typo.h6" Class="mt-4 mb-2">Permissions</MudText>
+
+        <MudStack Spacing="1">
+            <MudCheckBox @bind-Value="_permissions.SendMessages"
+                         Label="Send Messages"
+                         Color="Color.Primary" />
+
+            <MudCheckBox @bind-Value="_permissions.DeleteOthersMessages"
+                         Label="Delete Others' Messages"
+                         Color="Color.Primary" />
+
+            <MudCheckBox @bind-Value="_permissions.TimeoutUser"
+                         Label="Timeout User"
+                         Color="Color.Primary" />
+
+            <MudCheckBox @bind-Value="_permissions.BanUser"
+                         Label="Ban User"
+                         Color="Color.Primary" />
+
+            <MudCheckBox @bind-Value="_permissions.EditChannels"
+                         Label="Edit Channels"
+                         Color="Color.Primary" />
+
+            <MudCheckBox @bind-Value="_permissions.AddChannels"
+                         Label="Add Channels"
+                         Color="Color.Primary" />
+
+            <MudCheckBox @bind-Value="_permissions.EditServerSettings"
+                         Label="Edit Server Settings"
+                         Color="Color.Primary" />
+
+            <MudCheckBox @bind-Value="_permissions.ManageRoles"
+                         Label="Manage Roles"
+                         Color="Color.Primary" />
+
+            <MudCheckBox @bind-Value="_permissions.AssignRoles"
+                         Label="Assign Roles"
+                         Color="Color.Primary" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Success" OnClick="CreateRole">Create</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    [Parameter]
+    public int ServerId { get; set; }
+
+    private string _roleName = string.Empty;
+    private string _colorHex = string.Empty;
+    private RolePermissions _permissions = new RolePermissions();
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task CreateRole()
+    {
+        if (string.IsNullOrWhiteSpace(_roleName))
+        {
+            snackbar.Add("Role name is required.", Severity.Error);
+            return;
+        }
+
+        var colorToSave = string.IsNullOrWhiteSpace(_colorHex) ? null : _colorHex;
+
+        var (error, role) = await roleService.CreateRoleAsync(ServerId, _roleName, colorToSave, 0);
+
+        if (error is not null)
+        {
+            snackbar.Add(error, Severity.Error);
+            return;
+        }
+
+        if (role is not null)
+        {
+            var updateError = await roleService.UpdateRolePermissionsAsync(role.Id, _permissions);
+            if (updateError is not null)
+            {
+                snackbar.Add(updateError, Severity.Error);
+                return;
+            }
+        }
+
+        snackbar.Add("Role created successfully.", Severity.Success);
+        MudDialog.Close(DialogResult.Ok(role));
+    }
+}

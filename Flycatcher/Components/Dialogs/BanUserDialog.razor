@@ -1,0 +1,74 @@
+@inject UserBanService userBanService
+@inject UserStateService userStateService
+@inject ISnackbar snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudText Typo="Typo.body1" Class="mb-4">Ban user: <strong>@TargetUsername</strong></MudText>
+
+        <MudAlert Severity="Severity.Warning" Class="mb-4">
+            <strong>Warning:</strong> This is a permanent ban.
+        </MudAlert>
+
+        <MudTextField @bind-Value="_reason"
+                      Label="Reason"
+                      Required="true"
+                      MaxLength="500"
+                      Variant="Variant.Outlined"
+                      Lines="5"
+                      Class="mb-4"
+                      Placeholder="Enter the reason for banning this user..." />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Error" Variant="Variant.Filled" OnClick="SubmitBan" Disabled="@(string.IsNullOrWhiteSpace(_reason) || _reason.Length < 1)">Ban User</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    [Parameter]
+    public int TargetUserId { get; set; }
+
+    [Parameter]
+    public string TargetUsername { get; set; } = string.Empty;
+
+    private string _reason = "";
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private async Task SubmitBan()
+    {
+        if (string.IsNullOrWhiteSpace(_reason) || _reason.Length < 1)
+        {
+            snackbar.Add("Reason is required (1-500 characters)", Severity.Error);
+            return;
+        }
+
+        if (_reason.Length > 500)
+        {
+            snackbar.Add("Reason cannot exceed 500 characters", Severity.Error);
+            return;
+        }
+
+        var error = await userBanService.BanUserAsync(
+            TargetUserId,
+            userStateService.loggedInUserId!.Value,
+            _reason);
+
+        if (error != null)
+        {
+            snackbar.Add(error, Severity.Error);
+        }
+        else
+        {
+            snackbar.Add($"User {TargetUsername} has been permanently banned", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+    }
+}

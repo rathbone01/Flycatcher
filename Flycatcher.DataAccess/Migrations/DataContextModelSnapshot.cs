@@ -97,6 +97,36 @@ namespace Flycatcher.DataAccess.Migrations
                     b.ToTable("FriendRequests");
                 });
 
+            modelBuilder.Entity("Flycatcher.Models.Database.ChannelRolePermission", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ChannelId")
+                        .HasColumnType("int");
+
+                    b.Property<bool?>("DeleteOthersMessages")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("RoleId")
+                        .HasColumnType("int");
+
+                    b.Property<bool?>("SendMessages")
+                        .HasColumnType("bit");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RoleId");
+
+                    b.HasIndex("ChannelId", "RoleId")
+                        .IsUnique();
+
+                    b.ToTable("ChannelRolePermissions");
+                });
+
             modelBuilder.Entity("Flycatcher.Models.Database.Message", b =>
                 {
                     b.Property<int>("Id")
@@ -112,6 +142,12 @@ namespace Flycatcher.DataAccess.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("DeletedByUserId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("Timestamp")
                         .HasColumnType("datetime2");
 
@@ -122,9 +158,89 @@ namespace Flycatcher.DataAccess.Migrations
 
                     b.HasIndex("ChannelId");
 
+                    b.HasIndex("DeletedByUserId");
+
                     b.HasIndex("UserId");
 
                     b.ToTable("Messages");
+                });
+
+            modelBuilder.Entity("Flycatcher.Models.Database.Role", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ColorHex")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ServerId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ServerId");
+
+                    b.ToTable("Roles");
+                });
+
+            modelBuilder.Entity("Flycatcher.Models.Database.RolePermissions", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("AddChannels")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("AssignRoles")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("BanUser")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("DeleteOthersMessages")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("EditChannels")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("EditServerSettings")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("ManageRoles")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("RoleId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("SendMessages")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("TimeoutUser")
+                        .HasColumnType("bit");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RoleId")
+                        .IsUnique();
+
+                    b.ToTable("RolePermissions");
                 });
 
             modelBuilder.Entity("Flycatcher.Models.Database.Server", b =>
@@ -239,6 +355,124 @@ namespace Flycatcher.DataAccess.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Flycatcher.Models.Database.UserBan", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AppealReviewedByAdminUserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("AppealReviewedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("AppealReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("AppealStatus")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("AppealSubmittedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("BannedByAdminUserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("BannedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppealReviewedByAdminUserId");
+
+                    b.HasIndex("BannedByAdminUserId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("UserBans");
+                });
+
+            modelBuilder.Entity("Flycatcher.Models.Database.UserReport", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("ReportedUserId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ReporterUserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ReviewedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("ReviewedByAdminUserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReportedUserId");
+
+                    b.HasIndex("ReporterUserId");
+
+                    b.HasIndex("ReviewedByAdminUserId");
+
+                    b.ToTable("UserReports");
+                });
+
+            modelBuilder.Entity("Flycatcher.Models.Database.UserRole", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("AssignedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("RoleId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RoleId");
+
+                    b.HasIndex("UserId", "RoleId")
+                        .IsUnique();
+
+                    b.ToTable("UserRoles");
+                });
+
             modelBuilder.Entity("Flycatcher.Models.Database.UserServer", b =>
                 {
                     b.Property<int>("UserId")
@@ -254,6 +488,45 @@ namespace Flycatcher.DataAccess.Migrations
                     b.ToTable("UserServers");
                 });
 
+            modelBuilder.Entity("Flycatcher.Models.Database.UserTimeout", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("ExpiresAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("ServerId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("TimeoutAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("TimeoutByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ServerId");
+
+                    b.HasIndex("TimeoutByUserId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("UserTimeouts");
+                });
+
             modelBuilder.Entity("Flycatcher.Models.Database.Channel", b =>
                 {
                     b.HasOne("Flycatcher.Models.Database.Server", "Server")
@@ -263,6 +536,25 @@ namespace Flycatcher.DataAccess.Migrations
                         .IsRequired();
 
                     b.Navigation("Server");
+                });
+
+            modelBuilder.Entity("Flycatcher.Models.Database.ChannelRolePermission", b =>
+                {
+                    b.HasOne("Flycatcher.Models.Database.Channel", "Channel")
+                        .WithMany()
+                        .HasForeignKey("ChannelId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Flycatcher.Models.Database.Role", "Role")
+                        .WithMany("ChannelRolePermissions")
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Channel");
+
+                    b.Navigation("Role");
                 });
 
             modelBuilder.Entity("Flycatcher.Models.Database.DirectMessage", b =>
@@ -311,6 +603,11 @@ namespace Flycatcher.DataAccess.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Flycatcher.Models.Database.User", "DeletedByUser")
+                        .WithMany()
+                        .HasForeignKey("DeletedByUserId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("Flycatcher.Models.Database.User", "User")
                         .WithMany("Messages")
                         .HasForeignKey("UserId")
@@ -319,7 +616,31 @@ namespace Flycatcher.DataAccess.Migrations
 
                     b.Navigation("Channel");
 
+                    b.Navigation("DeletedByUser");
+
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Flycatcher.Models.Database.Role", b =>
+                {
+                    b.HasOne("Flycatcher.Models.Database.Server", "Server")
+                        .WithMany()
+                        .HasForeignKey("ServerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Server");
+                });
+
+            modelBuilder.Entity("Flycatcher.Models.Database.RolePermissions", b =>
+                {
+                    b.HasOne("Flycatcher.Models.Database.Role", "Role")
+                        .WithOne("Permissions")
+                        .HasForeignKey("Flycatcher.Models.Database.RolePermissions", "RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Role");
                 });
 
             modelBuilder.Entity("Flycatcher.Models.Database.ServerInvite", b =>
@@ -360,6 +681,32 @@ namespace Flycatcher.DataAccess.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Flycatcher.Models.Database.UserBan", b =>
+                {
+                    b.HasOne("Flycatcher.Models.Database.User", "AppealReviewedByAdmin")
+                        .WithMany()
+                        .HasForeignKey("AppealReviewedByAdminUserId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Flycatcher.Models.Database.User", "BannedByAdmin")
+                        .WithMany()
+                        .HasForeignKey("BannedByAdminUserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Flycatcher.Models.Database.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("AppealReviewedByAdmin");
+
+                    b.Navigation("BannedByAdmin");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Flycatcher.Models.Database.UserFriend", b =>
                 {
                     b.HasOne("Flycatcher.Models.Database.User", "Friend")
@@ -375,6 +722,50 @@ namespace Flycatcher.DataAccess.Migrations
                         .IsRequired();
 
                     b.Navigation("Friend");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Flycatcher.Models.Database.UserReport", b =>
+                {
+                    b.HasOne("Flycatcher.Models.Database.User", "ReportedUser")
+                        .WithMany()
+                        .HasForeignKey("ReportedUserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Flycatcher.Models.Database.User", "Reporter")
+                        .WithMany()
+                        .HasForeignKey("ReporterUserId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Flycatcher.Models.Database.User", "ReviewedByAdmin")
+                        .WithMany()
+                        .HasForeignKey("ReviewedByAdminUserId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("ReportedUser");
+
+                    b.Navigation("Reporter");
+
+                    b.Navigation("ReviewedByAdmin");
+                });
+
+            modelBuilder.Entity("Flycatcher.Models.Database.UserRole", b =>
+                {
+                    b.HasOne("Flycatcher.Models.Database.Role", "Role")
+                        .WithMany("UserRoles")
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Flycatcher.Models.Database.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Role");
 
                     b.Navigation("User");
                 });
@@ -396,6 +787,42 @@ namespace Flycatcher.DataAccess.Migrations
                     b.Navigation("Server");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Flycatcher.Models.Database.UserTimeout", b =>
+                {
+                    b.HasOne("Flycatcher.Models.Database.Server", "Server")
+                        .WithMany()
+                        .HasForeignKey("ServerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Flycatcher.Models.Database.User", "TimeoutByUser")
+                        .WithMany()
+                        .HasForeignKey("TimeoutByUserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Flycatcher.Models.Database.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Server");
+
+                    b.Navigation("TimeoutByUser");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Flycatcher.Models.Database.Role", b =>
+                {
+                    b.Navigation("ChannelRolePermissions");
+
+                    b.Navigation("Permissions");
+
+                    b.Navigation("UserRoles");
                 });
 
             modelBuilder.Entity("Flycatcher.Models.Database.Server", b =>

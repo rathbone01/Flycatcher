@@ -1,10 +1,26 @@
 ﻿@using Flycatcher.Components.Widgets.HomeWidgets.SiteAdminWidgets
+@inject UserReportService userReportService
+@inject UserBanService userBanService
 
 <br />
 
 <MudButtonGroup Color="Color.Primary" Variant="Variant.Filled">
     <MudButton OnClick="ShowServers">Servers</MudButton>
     <MudButton OnClick="ShowUsers">Users</MudButton>
+    <MudButton OnClick="ShowReports">
+        Reports
+        @if (pendingReportsCount > 0)
+        {
+            <MudChip T="string" Size="Size.Small" Color="Color.Warning" Class="ml-2">@pendingReportsCount</MudChip>
+        }
+    </MudButton>
+    <MudButton OnClick="ShowBans">
+        Bans
+        @if (pendingAppealsCount > 0)
+        {
+            <MudChip T="string" Size="Size.Small" Color="Color.Warning" Class="ml-2">@pendingAppealsCount</MudChip>
+        }
+    </MudButton>
 </MudButtonGroup>
 
 @if (selectedTab == Tab.Servers)
@@ -15,15 +31,45 @@ else if (selectedTab == Tab.Users)
 {
     <SiteAdminUsersWidget />
 }
+else if (selectedTab == Tab.Reports)
+{
+    <SiteAdminReportsWidget />
+}
+else if (selectedTab == Tab.Bans)
+{
+    <SiteAdminBansWidget />
+}
 
 @code {
     private enum Tab
     {
         Servers,
-        Users
+        Users,
+        Reports,
+        Bans
     }
 
     private Tab selectedTab = Tab.Servers;
+    private int pendingReportsCount = 0;
+    private int pendingAppealsCount = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPendingReportsCount();
+        await LoadPendingAppealsCount();
+    }
+
+    private async Task LoadPendingReportsCount()
+    {
+        pendingReportsCount = await userReportService.GetPendingReportCountAsync();
+        StateHasChanged();
+    }
+
+    private async Task LoadPendingAppealsCount()
+    {
+        pendingAppealsCount = await userBanService.GetPendingAppealCountAsync();
+        StateHasChanged();
+    }
 
     private void ShowServers()
     {
@@ -34,6 +80,20 @@ else if (selectedTab == Tab.Users)
     private void ShowUsers()
     {
         selectedTab = Tab.Users;
+        StateHasChanged();
+    }
+
+    private void ShowReports()
+    {
+        selectedTab = Tab.Reports;
+        InvokeAsync(LoadPendingReportsCount);
+        StateHasChanged();
+    }
+
+    private void ShowBans()
+    {
+        selectedTab = Tab.Bans;
+        InvokeAsync(LoadPendingAppealsCount);
         StateHasChanged();
     }
 }

@@ -1,0 +1,74 @@
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Block" Class="mr-3 mb-n1" />
+            Ban User
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText Class="mb-3">@ContentText</MudText>
+        <MudTextField Label="Ban Reason"
+                      @bind-Value="banReason"
+                      Lines="3"
+                      Variant="Variant.Outlined"
+                      Required="true"
+                      Counter="500"
+                      MaxLength="500"
+                      Immediate="true"
+                      HelperText="@($"{banReason.Length}/500 characters")" />
+        @if (!string.IsNullOrWhiteSpace(errorMessage))
+        {
+            <MudAlert Severity="Severity.Error" Class="mt-3">@errorMessage</MudAlert>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="@Color" OnClick="Submit">@ButtonText</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    [Parameter]
+    public string ContentText { get; set; } = string.Empty;
+
+    [Parameter]
+    public string ButtonText { get; set; } = "Submit";
+
+    [Parameter]
+    public Color Color { get; set; } = Color.Error;
+
+    private string banReason = string.Empty;
+    private string errorMessage = string.Empty;
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Submit()
+    {
+        errorMessage = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(banReason))
+        {
+            errorMessage = "Ban reason is required.";
+            return;
+        }
+
+        var trimmed = banReason.Trim();
+
+        if (trimmed.Length < 10)
+        {
+            errorMessage = "Ban reason must be at least 10 characters.";
+            return;
+        }
+
+        if (trimmed.Length > 500)
+        {
+            errorMessage = "Ban reason must not exceed 500 characters.";
+            return;
+        }
+
+        MudDialog.Close(DialogResult.Ok(trimmed));
+    }
+}

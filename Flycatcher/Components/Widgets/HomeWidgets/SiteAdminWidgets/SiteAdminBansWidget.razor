@@ -1,0 +1,281 @@
+@inject UserBanService userBanService
+@inject UserStateService userStateService
+@inject ISnackbar snackbar
+@using Flycatcher.Models.Database
+@using Flycatcher.Services.Enumerations
+
+<MudPaper Class="pa-4" Elevation="2">
+    <MudStack Spacing="3">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+            <MudText Typo="Typo.h6">Ban Management</MudText>
+
+            <MudButtonGroup Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Small">
+                <MudButton OnClick="() => ShowTab(BanTab.AllBans)"
+                           Variant="@(selectedTab == BanTab.AllBans ? Variant.Filled : Variant.Outlined)">
+                    All Bans
+                </MudButton>
+                <MudButton OnClick="() => ShowTab(BanTab.PendingAppeals)"
+                           Variant="@(selectedTab == BanTab.PendingAppeals ? Variant.Filled : Variant.Outlined)">
+                    Pending Appeals
+                    @if (pendingAppealsCount > 0)
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Warning" Class="ml-2">@pendingAppealsCount</MudChip>
+                    }
+                </MudButton>
+            </MudButtonGroup>
+        </MudStack>
+
+        @if (isLoading)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+        }
+        else if (selectedTab == BanTab.AllBans)
+        {
+            @if (allBans.Count == 0)
+            {
+                <MudAlert Severity="Severity.Info">No bans found.</MudAlert>
+            }
+            else
+            {
+                <MudSimpleTable Bordered="true" Hover="true" Dense="true" Elevation="0">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Banned By</th>
+                            <th>Reason</th>
+                            <th>Banned Date</th>
+                            <th>Appeal Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var ban in allBans)
+                        {
+                            <tr>
+                                <td>
+                                    <MudText Typo="Typo.body2">
+                                        <strong>@(ban.User?.Username ?? "Unknown")</strong>
+                                    </MudText>
+                                </td>
+                                <td>
+                                    <MudText Typo="Typo.body2">
+                                        @(ban.BannedByAdmin?.Username ?? "Unknown")
+                                    </MudText>
+                                </td>
+                                <td>
+                                    @if (ban.Reason.Length > 100)
+                                    {
+                                        <MudTooltip Text="@ban.Reason">
+                                            <MudText Typo="Typo.body2">@(ban.Reason.Substring(0, 100))...</MudText>
+                                        </MudTooltip>
+                                    }
+                                    else
+                                    {
+                                        <MudText Typo="Typo.body2">@ban.Reason</MudText>
+                                    }
+                                </td>
+                                <td>
+                                    <MudText Typo="Typo.body2">@ban.BannedAtUtc.ToString("yyyy-MM-dd HH:mm") UTC</MudText>
+                                </td>
+                                <td>
+                                    @switch (ban.AppealStatus)
+                                    {
+                                        case AppealStatus.None:
+                                            <MudChip T="string" Size="Size.Small" Color="Color.Default">None</MudChip>
+                                            break;
+                                        case AppealStatus.Pending:
+                                            <MudChip T="string" Size="Size.Small" Color="Color.Warning">Pending</MudChip>
+                                            break;
+                                        case AppealStatus.Approved:
+                                            <MudChip T="string" Size="Size.Small" Color="Color.Success">Approved</MudChip>
+                                            break;
+                                        case AppealStatus.Denied:
+                                            <MudChip T="string" Size="Size.Small" Color="Color.Error">Denied</MudChip>
+                                            break;
+                                    }
+                                </td>
+                                <td>
+                                    @if (ban.AppealStatus == AppealStatus.Pending)
+                                    {
+                                        <MudStack Row="true" Spacing="1">
+                                            <MudButton Size="Size.Small"
+                                                       Variant="Variant.Filled"
+                                                       Color="Color.Success"
+                                                       OnClick="() => ReviewAppeal(ban.Id, true)">
+                                                Approve
+                                            </MudButton>
+                                            <MudButton Size="Size.Small"
+                                                       Variant="Variant.Filled"
+                                                       Color="Color.Error"
+                                                       OnClick="() => ReviewAppeal(ban.Id, false)">
+                                                Deny
+                                            </MudButton>
+                                        </MudStack>
+                                    }
+                                    else
+                                    {
+                                        <MudText Typo="Typo.body2" Color="Color.Secondary">-</MudText>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </MudSimpleTable>
+            }
+        }
+        else if (selectedTab == BanTab.PendingAppeals)
+        {
+            @if (pendingAppeals.Count == 0)
+            {
+                <MudAlert Severity="Severity.Info">No pending appeals.</MudAlert>
+            }
+            else
+            {
+                <MudSimpleTable Bordered="true" Hover="true" Dense="true" Elevation="0">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Ban Reason</th>
+                            <th>Appeal Reason</th>
+                            <th>Appeal Submitted</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var ban in pendingAppeals)
+                        {
+                            <tr>
+                                <td>
+                                    <MudText Typo="Typo.body2">
+                                        <strong>@(ban.User?.Username ?? "Unknown")</strong>
+                                    </MudText>
+                                </td>
+                                <td>
+                                    @if (ban.Reason.Length > 100)
+                                    {
+                                        <MudTooltip Text="@ban.Reason">
+                                            <MudText Typo="Typo.body2">@(ban.Reason.Substring(0, 100))...</MudText>
+                                        </MudTooltip>
+                                    }
+                                    else
+                                    {
+                                        <MudText Typo="Typo.body2">@ban.Reason</MudText>
+                                    }
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(ban.AppealReason))
+                                    {
+                                        @if (ban.AppealReason.Length > 150)
+                                        {
+                                            <MudTooltip Text="@ban.AppealReason">
+                                                <MudText Typo="Typo.body2">@(ban.AppealReason.Substring(0, 150))...</MudText>
+                                            </MudTooltip>
+                                        }
+                                        else
+                                        {
+                                            <MudText Typo="Typo.body2">@ban.AppealReason</MudText>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <MudText Typo="Typo.body2" Color="Color.Secondary">-</MudText>
+                                    }
+                                </td>
+                                <td>
+                                    <MudText Typo="Typo.body2">
+                                        @(ban.AppealSubmittedAtUtc?.ToString("yyyy-MM-dd HH:mm") ?? "-") UTC
+                                    </MudText>
+                                </td>
+                                <td>
+                                    <MudStack Row="true" Spacing="1">
+                                        <MudButton Size="Size.Small"
+                                                   Variant="Variant.Filled"
+                                                   Color="Color.Success"
+                                                   OnClick="() => ReviewAppeal(ban.Id, true)">
+                                            Approve
+                                        </MudButton>
+                                        <MudButton Size="Size.Small"
+                                                   Variant="Variant.Filled"
+                                                   Color="Color.Error"
+                                                   OnClick="() => ReviewAppeal(ban.Id, false)">
+                                            Deny
+                                        </MudButton>
+                                    </MudStack>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </MudSimpleTable>
+            }
+        }
+    </MudStack>
+</MudPaper>
+
+@code {
+    private enum BanTab
+    {
+        AllBans,
+        PendingAppeals
+    }
+
+    private BanTab selectedTab = BanTab.AllBans;
+    private List<UserBan> allBans = new();
+    private List<UserBan> pendingAppeals = new();
+    private int pendingAppealsCount = 0;
+    private bool isLoading = false;
+    private int adminUserId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        adminUserId = (int)userStateService.loggedInUserId!;
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        isLoading = true;
+
+        if (selectedTab == BanTab.AllBans)
+        {
+            allBans = await userBanService.GetAllBansAsync();
+        }
+        else if (selectedTab == BanTab.PendingAppeals)
+        {
+            pendingAppeals = await userBanService.GetPendingAppealsAsync();
+        }
+
+        pendingAppealsCount = await userBanService.GetPendingAppealCountAsync();
+
+        isLoading = false;
+        StateHasChanged();
+    }
+
+    private void ShowTab(BanTab tab)
+    {
+        selectedTab = tab;
+        InvokeAsync(LoadData);
+    }
+
+    private async Task ReviewAppeal(int banId, bool approve)
+    {
+        var error = await userBanService.ReviewAppealAsync(banId, adminUserId, approve);
+
+        if (error is not null)
+        {
+            snackbar.Add(error, Severity.Error);
+        }
+        else
+        {
+            if (approve)
+            {
+                snackbar.Add("Appeal approved. User has been unbanned.", Severity.Success);
+            }
+            else
+            {
+                snackbar.Add("Appeal denied.", Severity.Success);
+            }
+
+            await LoadData();
+        }
+    }
+}

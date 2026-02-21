@@ -1,0 +1,227 @@
+@inject UserReportService userReportService
+@inject UserBanService userBanService
+@inject UserStateService userStateService
+@inject ISnackbar snackbar
+@inject IDialogService dialogService
+@using Flycatcher.Models.Database
+@using Flycatcher.Components.Dialogs
+
+<MudPaper Class="pa-4" Elevation="2">
+    <MudStack Spacing="3">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+            <MudText Typo="Typo.h6">
+                User Reports
+                @if (pendingCount > 0)
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Warning">@pendingCount pending</MudChip>
+                }
+            </MudText>
+
+            <MudButtonGroup Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Small">
+                <MudButton OnClick="() => ShowPendingOnly(true)"
+                           Variant="@(showPendingOnly ? Variant.Filled : Variant.Outlined)">
+                    Pending Only
+                </MudButton>
+                <MudButton OnClick="() => ShowPendingOnly(false)"
+                           Variant="@(!showPendingOnly ? Variant.Filled : Variant.Outlined)">
+                    Show All
+                </MudButton>
+            </MudButtonGroup>
+        </MudStack>
+
+        @if (isLoading)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+        }
+        else if (reports.Count == 0)
+        {
+            <MudAlert Severity="Severity.Info">No reports found.</MudAlert>
+        }
+        else
+        {
+            <MudSimpleTable Bordered="true" Hover="true" Dense="true" Elevation="0">
+                <thead>
+                    <tr>
+                        <th>Reported User</th>
+                        <th>Reporter</th>
+                        <th>Reason</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var report in reports)
+                    {
+                        <tr>
+                            <td>
+                                <MudText Typo="Typo.body2">
+                                    <strong>@(report.ReportedUser?.Username ?? "Unknown")</strong>
+                                </MudText>
+                            </td>
+                            <td>
+                                <MudText Typo="Typo.body2">
+                                    @(report.Reporter?.Username ?? "System")
+                                </MudText>
+                            </td>
+                            <td>
+                                @if (report.Reason.Length > 100)
+                                {
+                                    <MudTooltip Text="@report.Reason">
+                                        <MudText Typo="Typo.body2">@(report.Reason.Substring(0, 100))...</MudText>
+                                    </MudTooltip>
+                                }
+                                else
+                                {
+                                    <MudText Typo="Typo.body2">@report.Reason</MudText>
+                                }
+                            </td>
+                            <td>
+                                <MudText Typo="Typo.body2">@report.CreatedAtUtc.ToString("yyyy-MM-dd HH:mm")</MudText>
+                            </td>
+                            <td>
+                                @switch (report.Status)
+                                {
+                                    case ReportStatus.Open:
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Warning">Open</MudChip>
+                                        break;
+                                    case ReportStatus.Reviewed:
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Success">Reviewed</MudChip>
+                                        break;
+                                    case ReportStatus.Dismissed:
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Default">Dismissed</MudChip>
+                                        break;
+                                }
+                            </td>
+                            <td>
+                                @if (report.Status == ReportStatus.Open)
+                                {
+                                    <MudStack Row="true" Spacing="1">
+                                        <MudButton Size="Size.Small"
+                                                   Variant="Variant.Outlined"
+                                                   Color="Color.Default"
+                                                   OnClick="() => DismissReport(report.Id)">
+                                            Dismiss
+                                        </MudButton>
+                                        <MudButton Size="Size.Small"
+                                                   Variant="Variant.Filled"
+                                                   Color="Color.Error"
+                                                   OnClick="() => BanUserFromReport(report)">
+                                            Ban User
+                                        </MudButton>
+                                    </MudStack>
+                                }
+                                else
+                                {
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                        Reviewed by @(report.ReviewedByAdmin?.Username ?? "Unknown")
+                                    </MudText>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </MudSimpleTable>
+        }
+    </MudStack>
+</MudPaper>
+
+@code {
+    private List<UserReport> reports = new();
+    private int pendingCount = 0;
+    private bool showPendingOnly = true;
+    private bool isLoading = false;
+    private int adminUserId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        adminUserId = (int)userStateService.loggedInUserId!;
+        await LoadReports();
+    }
+
+    private async Task LoadReports()
+    {
+        isLoading = true;
+
+        if (showPendingOnly)
+        {
+            reports = await userReportService.GetPendingReportsAsync();
+        }
+        else
+        {
+            reports = await userReportService.GetAllReportsAsync();
+        }
+
+        pendingCount = await userReportService.GetPendingReportCountAsync();
+
+        isLoading = false;
+        StateHasChanged();
+    }
+
+    private void ShowPendingOnly(bool value)
+    {
+        showPendingOnly = value;
+        InvokeAsync(LoadReports);
+    }
+
+    private async Task DismissReport(int reportId)
+    {
+        var error = await userReportService.ReviewReportAsync(reportId, adminUserId, dismiss: true);
+
+        if (error is not null)
+        {
+            snackbar.Add(error, Severity.Error);
+        }
+        else
+        {
+            snackbar.Add("Report dismissed successfully.", Severity.Success);
+            await LoadReports();
+        }
+    }
+
+    private async Task BanUserFromReport(UserReport report)
+    {
+        var parameters = new DialogParameters
+        {
+            { "ContentText", $"Are you sure you want to ban {report.ReportedUser?.Username ?? "this user"}? Please provide a reason for the ban:" },
+            { "ButtonText", "Ban User" },
+            { "Color", Color.Error }
+        };
+
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true
+        };
+
+        var dialog = await dialogService.ShowAsync<BanReasonDialog>("Ban User", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled && result.Data is string banReason && !string.IsNullOrWhiteSpace(banReason))
+        {
+            var banError = await userBanService.BanUserAsync(report.ReportedUserId, adminUserId, banReason);
+
+            if (banError is not null)
+            {
+                snackbar.Add(banError, Severity.Error);
+            }
+            else
+            {
+                // Ban successful, now dismiss the report
+                var dismissError = await userReportService.ReviewReportAsync(report.Id, adminUserId, dismiss: true);
+
+                if (dismissError is not null)
+                {
+                    snackbar.Add($"User banned successfully, but failed to dismiss report: {dismissError}", Severity.Warning);
+                }
+                else
+                {
+                    snackbar.Add($"User {report.ReportedUser?.Username} has been banned and report dismissed.", Severity.Success);
+                }
+
+                await LoadReports();
+            }
+        }
+    }
+}

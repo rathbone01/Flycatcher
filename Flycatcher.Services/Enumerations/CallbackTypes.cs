@@ -17,6 +17,13 @@ namespace Flycatcher.Services.Enumerations
         FriendsListUpdated,         // Updates the friends list for both RX and TX, so added or removed friends, friend requests etc.
         ChannelDeleted,             // Channel deleted
         ServerDeleted,              // Server deleted
-        DirectMessageEvent          // Direct message received between two users
+        DirectMessageEvent,         // Direct message received between two users
+        RolesUpdated,               // Server roles created, updated, or deleted
+        UserRoleChanged,            // User's roles assigned or removed
+        UserBanned,                 // User banned from server or application
+        UserTimedOut,               // User timed out
+        ReportSubmitted,            // New report submitted (for admins)
+        AppealSubmitted,            // Appeal submitted (for admins)
+        AppealReviewed              // Appeal approved or denied (for the banned user)
     }
 }

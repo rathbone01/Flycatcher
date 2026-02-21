@@ -1,0 +1,164 @@
+@inject UserBanService UserBanService
+@inject UserStateService UserStateService
+@inject ISnackbar Snackbar
+@using Flycatcher.Models.Database
+
+<!--Small Screen Layout-->
+<MudHidden Breakpoint="Breakpoint.SmAndDown" Invert="true">
+    <MudContainer Class="d-flex flex-column align-center"
+                  Style="margin-top: 10vh;">
+
+        <MudImage Fluid="false"
+                  ObjectFit="ObjectFit.ScaleDown"
+                  ObjectPosition="ObjectPosition.Center"
+                  Src="images/mascot_small.png" />
+
+        <MudText Typo="Typo.h2" Class="mt-4">flycatcher.chat</MudText>
+    </MudContainer>
+</MudHidden>
+
+<!--Large Screen Layout-->
+<MudHidden Breakpoint="Breakpoint.SmAndDown" Invert="false">
+    <MudContainer Class="d-flex justify-center align-center" Style="margin-top: 10vh;">
+        <br />
+        <MudImage Fluid="false" ObjectFit="ObjectFit.ScaleDown" ObjectPosition="ObjectPosition.Center" Src="images/mascot_small.png" />
+        <MudText Typo="Typo.h2">flycatcher.chat</MudText>
+    </MudContainer>
+</MudHidden>
+
+<MudContainer Class="d-flex justify-center align-center" Style="height: 50vh;">
+    <MudCard Style="width: 500px;">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudText Typo="Typo.h5" Color="Color.Error">Your account has been suspended</MudText>
+            </CardHeaderContent>
+        </MudCardHeader>
+        <MudCardContent>
+            <MudText Typo="Typo.body1" Class="mb-2"><strong>Reason:</strong> @Ban.Reason</MudText>
+            <MudText Typo="Typo.body2" Class="mb-4"><strong>Banned on:</strong> @Ban.BannedAtUtc.ToLocalTime().ToString("MMMM dd, yyyy")</MudText>
+
+            @if (Ban.AppealStatus == AppealStatus.None)
+            {
+                <MudDivider Class="my-4" />
+                <MudText Typo="Typo.h6" Class="mb-2">Submit an Appeal</MudText>
+                <MudTextField Label="Appeal Reason"
+                              @bind-Value="appealReason"
+                              Variant="Variant.Outlined"
+                              Lines="5"
+                              Counter="1000"
+                              MaxLength="1000"
+                              Immediate="true"
+                              HelperText="Please provide a detailed explanation (20-1000 characters)" />
+
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <MudAlert Severity="Severity.Error" Class="mt-2">@errorMessage</MudAlert>
+                }
+
+                @if (appealSubmitted)
+                {
+                    <MudAlert Severity="Severity.Success" Class="mt-2">Your appeal has been submitted successfully and is under review.</MudAlert>
+                }
+            }
+            else if (Ban.AppealStatus == AppealStatus.Pending)
+            {
+                <MudDivider Class="my-4" />
+                <MudAlert Severity="Severity.Info">
+                    Your appeal is under review. Please check back later.
+                    <br />
+                    <MudText Typo="Typo.caption">Submitted on: @Ban.AppealSubmittedAtUtc?.ToLocalTime().ToString("MMMM dd, yyyy")</MudText>
+                </MudAlert>
+            }
+            else if (Ban.AppealStatus == AppealStatus.Denied)
+            {
+                <MudDivider Class="my-4" />
+                <MudAlert Severity="Severity.Warning">
+                    Your appeal was denied.
+                    @if (Ban.AppealReviewedAtUtc.HasValue)
+                    {
+                        <br />
+                        <MudText Typo="Typo.caption">Reviewed on: @Ban.AppealReviewedAtUtc.Value.ToLocalTime().ToString("MMMM dd, yyyy")</MudText>
+                    }
+                </MudAlert>
+            }
+            else if (Ban.AppealStatus == AppealStatus.Approved)
+            {
+                <MudDivider Class="my-4" />
+                <MudAlert Severity="Severity.Success">
+                    Your appeal was approved. You should be able to access the application now. Please try logging out and back in.
+                </MudAlert>
+            }
+        </MudCardContent>
+        <MudCardActions Class="d-flex justify-space-between">
+            @if (Ban.AppealStatus == AppealStatus.None && !appealSubmitted)
+            {
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           OnClick="SubmitAppeal"
+                           Disabled="isSubmitting">
+                    @if (isSubmitting)
+                    {
+                        <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                        <span class="ml-2">Submitting...</span>
+                    }
+                    else
+                    {
+                        <span>Submit Appeal</span>
+                    }
+                </MudButton>
+            }
+            <MudSpacer />
+            <MudButton Variant="Variant.Text" Color="Color.Default" OnClick="Logout">Logout</MudButton>
+        </MudCardActions>
+    </MudCard>
+</MudContainer>
+
+@code {
+    [Parameter]
+    public UserBan Ban { get; set; } = null!;
+
+    private string appealReason = string.Empty;
+    private string errorMessage = string.Empty;
+    private bool appealSubmitted = false;
+    private bool isSubmitting = false;
+
+    private async Task SubmitAppeal()
+    {
+        if (UserStateService.loggedInUserId is null)
+        {
+            errorMessage = "You must be logged in to submit an appeal.";
+            return;
+        }
+
+        errorMessage = string.Empty;
+        isSubmitting = true;
+
+        var result = await UserBanService.SubmitAppealAsync(UserStateService.loggedInUserId.Value, appealReason);
+
+        isSubmitting = false;
+
+        if (result is not null)
+        {
+            errorMessage = result;
+            Snackbar.Add(result, Severity.Error);
+        }
+        else
+        {
+            appealSubmitted = true;
+            Ban.AppealStatus = AppealStatus.Pending;
+            Ban.AppealReason = appealReason;
+            Ban.AppealSubmittedAtUtc = DateTime.UtcNow;
+            Snackbar.Add("Appeal submitted successfully!", Severity.Success);
+            StateHasChanged();
+        }
+    }
+
+    private void Logout()
+    {
+        UserStateService.loggedInUsername = null;
+        UserStateService.loggedInUserId = null;
+        UserStateService.selectedServerId = null;
+        UserStateService.selectedChannelId = null;
+        UserStateService.selectedFriendChat = null;
+    }
+}

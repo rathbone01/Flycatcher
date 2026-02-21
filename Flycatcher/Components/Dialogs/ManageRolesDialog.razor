@@ -1,0 +1,129 @@
+@using Flycatcher.Services
+@using Flycatcher.Models.Database
+@using MudBlazor
+@inject RoleService roleService
+@inject IDialogService dialogService
+@inject ISnackbar snackbar
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">Manage Roles</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudButton Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   OnClick="OpenCreateRoleDialog"
+                   FullWidth="true"
+                   Class="mb-4">
+            Create New Role
+        </MudButton>
+
+        @if (_roles is null)
+        {
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+        }
+        else if (_roles.Count == 0)
+        {
+            <MudText Typo="Typo.body1" Color="Color.Secondary">No roles found. Create one to get started.</MudText>
+        }
+        else
+        {
+            <MudList T="string">
+                @foreach (var role in _roles)
+                {
+                    <MudListItem T="string">
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                <MudText Typo="Typo.body1"
+                                         Style="@GetRoleColorStyle(role.ColorHex)">
+                                    @role.Name
+                                </MudText>
+                                <MudChip T="string" Size="Size.Small" Color="Color.Default">
+                                    @(_roleMemberCounts.ContainsKey(role.Id) ? _roleMemberCounts[role.Id] : 0) members
+                                </MudChip>
+                            </MudStack>
+                            <MudButton Color="Color.Primary"
+                                       Variant="Variant.Outlined"
+                                       Size="Size.Small"
+                                       OnClick="() => OpenEditRoleDialog(role)">
+                                Edit
+                            </MudButton>
+                        </MudStack>
+                    </MudListItem>
+                    <MudDivider />
+                }
+            </MudList>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Close">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    [Parameter]
+    public int ServerId { get; set; }
+
+    private List<Role>? _roles;
+    private Dictionary<int, int> _roleMemberCounts = new Dictionary<int, int>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRoles();
+    }
+
+    private async Task LoadRoles()
+    {
+        _roles = await roleService.GetServerRolesAsync(ServerId);
+
+        _roleMemberCounts.Clear();
+        foreach (var role in _roles)
+        {
+            var count = await roleService.GetRoleUserCountAsync(role.Id);
+            _roleMemberCounts[role.Id] = count;
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task OpenCreateRoleDialog()
+    {
+        var parameters = new DialogParameters();
+        parameters.Add("ServerId", ServerId);
+
+        var dialog = await dialogService.ShowAsync<CreateRoleDialog>("Create Role", parameters);
+        var result = await dialog.Result;
+
+        if (result is not null && !result.Canceled)
+        {
+            await LoadRoles();
+        }
+    }
+
+    private async Task OpenEditRoleDialog(Role role)
+    {
+        var parameters = new DialogParameters();
+        parameters.Add("ExistingRole", role);
+
+        var dialog = await dialogService.ShowAsync<EditRoleDialog>("Edit Role", parameters);
+        var result = await dialog.Result;
+
+        if (result is not null && !result.Canceled)
+        {
+            await LoadRoles();
+        }
+    }
+
+    private string GetRoleColorStyle(string? colorHex)
+    {
+        if (string.IsNullOrWhiteSpace(colorHex))
+            return string.Empty;
+
+        return $"color: {colorHex}; font-weight: 600;";
+    }
+
+    private void Close() => MudDialog.Close();
+}

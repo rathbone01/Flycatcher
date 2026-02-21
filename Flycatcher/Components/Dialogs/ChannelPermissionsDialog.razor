@@ -1,0 +1,209 @@
+@using Flycatcher.Services
+@using Flycatcher.Models.Database
+@using MudBlazor
+@inject RoleService roleService
+@inject ChannelPermissionService channelPermissionService
+@inject ISnackbar snackbar
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">Channel Permissions: #@ChannelName</MudText>
+    </TitleContent>
+    <DialogContent>
+        @if (_isLoading)
+        {
+            <MudProgressCircular Indeterminate="true" />
+        }
+        else if (_rolePermissions.Count == 0)
+        {
+            <MudText Typo="Typo.body1" Color="Color.Warning">
+                No roles have been created for this server. Create roles first.
+            </MudText>
+        }
+        else
+        {
+            <MudStack Spacing="3">
+                @foreach (var rolePermUi in _rolePermissions)
+                {
+                    <MudPaper Elevation="2" Class="pa-3">
+                        <MudText Typo="Typo.h6" Class="mb-2">
+                            <span style="@GetRoleColorStyle(rolePermUi.RoleColorHex)">@rolePermUi.RoleName</span>
+                        </MudText>
+
+                        <MudStack Spacing="2">
+                            <div>
+                                <MudText Typo="Typo.body2" Class="mb-1"><strong>Send Messages</strong></MudText>
+                                <MudRadioGroup @bind-Value="rolePermUi.SendMessages" T="string">
+                                    <MudRadio Value="@("Inherit")" Color="Color.Default">Inherit</MudRadio>
+                                    <MudRadio Value="@("Allow")" Color="Color.Success">Allow</MudRadio>
+                                    <MudRadio Value="@("Deny")" Color="Color.Error">Deny</MudRadio>
+                                </MudRadioGroup>
+                            </div>
+
+                            <div>
+                                <MudText Typo="Typo.body2" Class="mb-1"><strong>Delete Others' Messages</strong></MudText>
+                                <MudRadioGroup @bind-Value="rolePermUi.DeleteOthersMessages" T="string">
+                                    <MudRadio Value="@("Inherit")" Color="Color.Default">Inherit</MudRadio>
+                                    <MudRadio Value="@("Allow")" Color="Color.Success">Allow</MudRadio>
+                                    <MudRadio Value="@("Deny")" Color="Color.Error">Deny</MudRadio>
+                                </MudRadioGroup>
+                            </div>
+                        </MudStack>
+                    </MudPaper>
+                }
+            </MudStack>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        @if (_rolePermissions.Count > 0)
+        {
+            <MudButton Color="Color.Success" OnClick="SaveAll">Save All</MudButton>
+        }
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    [Parameter]
+    public int ChannelId { get; set; }
+
+    [Parameter]
+    public string ChannelName { get; set; } = string.Empty;
+
+    [Parameter]
+    public int ServerId { get; set; }
+
+    private bool _isLoading = true;
+    private List<RolePermissionUi> _rolePermissions = new();
+    private Dictionary<int, ChannelRolePermission> _overrides = new();
+
+    private class RolePermissionUi
+    {
+        public int RoleId { get; set; }
+        public string RoleName { get; set; } = "";
+        public string? RoleColorHex { get; set; }
+        public string SendMessages { get; set; } = "Inherit"; // "Inherit", "Allow", "Deny"
+        public string DeleteOthersMessages { get; set; } = "Inherit";
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        _isLoading = true;
+
+        // Load server roles
+        var serverRoles = await roleService.GetServerRolesAsync(ServerId);
+
+        // Load channel overrides
+        var channelOverrides = await channelPermissionService.GetChannelOverridesAsync(ChannelId);
+
+        // Build overrides dictionary
+        _overrides = channelOverrides.ToDictionary(o => o.RoleId);
+
+        // Build UI list
+        _rolePermissions = serverRoles.Select(role =>
+        {
+            var ui = new RolePermissionUi
+            {
+                RoleId = role.Id,
+                RoleName = role.Name,
+                RoleColorHex = role.ColorHex
+            };
+
+            // If override exists, populate from it
+            if (_overrides.TryGetValue(role.Id, out var existingOverride))
+            {
+                ui.SendMessages = ConvertBoolToString(existingOverride.SendMessages);
+                ui.DeleteOthersMessages = ConvertBoolToString(existingOverride.DeleteOthersMessages);
+            }
+            else
+            {
+                ui.SendMessages = "Inherit";
+                ui.DeleteOthersMessages = "Inherit";
+            }
+
+            return ui;
+        }).ToList();
+
+        _isLoading = false;
+    }
+
+    private string ConvertBoolToString(bool? value)
+    {
+        return value switch
+        {
+            null => "Inherit",
+            true => "Allow",
+            false => "Deny"
+        };
+    }
+
+    private bool? ConvertStringToBool(string value)
+    {
+        return value switch
+        {
+            "Allow" => true,
+            "Deny" => false,
+            _ => null
+        };
+    }
+
+    private string GetRoleColorStyle(string? colorHex)
+    {
+        if (string.IsNullOrWhiteSpace(colorHex))
+            return string.Empty;
+
+        return $"color: {colorHex};";
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task SaveAll()
+    {
+        foreach (var rolePermUi in _rolePermissions)
+        {
+            var sendMessages = ConvertStringToBool(rolePermUi.SendMessages);
+            var deleteOthersMessages = ConvertStringToBool(rolePermUi.DeleteOthersMessages);
+
+            // If both are null (inherit), remove the override if it exists
+            if (sendMessages == null && deleteOthersMessages == null)
+            {
+                if (_overrides.ContainsKey(rolePermUi.RoleId))
+                {
+                    var removeError = await channelPermissionService.RemoveChannelOverrideAsync(ChannelId, rolePermUi.RoleId);
+                    if (removeError is not null)
+                    {
+                        snackbar.Add($"Error removing override for {rolePermUi.RoleName}: {removeError}", Severity.Error);
+                        return;
+                    }
+                }
+            }
+            else
+            {
+                // Set or update the override
+                var setError = await channelPermissionService.SetChannelOverrideAsync(
+                    ChannelId,
+                    rolePermUi.RoleId,
+                    sendMessages,
+                    deleteOthersMessages
+                );
+
+                if (setError is not null)
+                {
+                    snackbar.Add($"Error saving override for {rolePermUi.RoleName}: {setError}", Severity.Error);
+                    return;
+                }
+            }
+        }
+
+        snackbar.Add("Channel permissions saved successfully.", Severity.Success);
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+}

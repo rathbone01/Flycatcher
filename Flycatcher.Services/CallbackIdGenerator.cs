@@ -33,6 +33,42 @@ namespace Flycatcher.Services
         }
 
         /// <summary>
+        /// Generates a deterministic Guid for RolesUpdated events scoped to a server.
+        /// </summary>
+        public static Guid CreateRolesUpdatedId(int serverId)
+        {
+            return CreateId(CallbackType.RolesUpdated, serverId);
+        }
+
+        /// <summary>
+        /// Generates a deterministic Guid for UserRoleChanged events for a user in a server.
+        /// </summary>
+        public static Guid CreateUserRoleChangedId(int userId, int serverId)
+        {
+            string input = $"{CallbackType.UserRoleChanged}:{userId}:{serverId}";
+            return GenerateGuidV5(Namespace, input);
+        }
+
+        /// <summary>
+        /// Generates a deterministic Guid for UserBanned events for a specific user.
+        /// </summary>
+        public static Guid CreateUserBannedId(int userId)
+        {
+            return CreateId(CallbackType.UserBanned, userId);
+        }
+
+        /// <summary>
+        /// Generates a fixed Guid for admin-wide notifications (reports, appeals).
+        /// This allows all admins to subscribe to the same callback channel.
+        /// </summary>
+        public static Guid CreateAdminNotificationId()
+        {
+            // Use a fixed input to generate a consistent GUID for all admin notifications
+            string input = "AdminNotifications";
+            return GenerateGuidV5(Namespace, input);
+        }
+
+        /// <summary>
         /// UUID Version 5 implementation per RFC 4122.
         /// Produces a deterministic GUID from a namespace GUID and a name string.
         /// </summary>

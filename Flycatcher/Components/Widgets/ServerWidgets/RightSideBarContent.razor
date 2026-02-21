@@ -4,6 +4,14 @@
 @inject UserStateService userStateService
 @inject CallbackService callbackService
 @inject FriendRequestService friendRequestService
+@inject PermissionService permissionService
+@inject RoleService roleService
+@inject UserTimeoutService userTimeoutService
+@inject UserBanService userBanService
+@inject IDialogService DialogService
+@inject ISnackbar snackbar
+@using Flycatcher.Components.Dialogs
+@using Flycatcher.Services.Enumerations
 
 
 <div style="justify-content: center; text-align: center;">
@@ -47,6 +55,25 @@
                         {
                             <MudButton Color="Color.Success" OnClick="CreateFriendRequest">Add Friend</MudButton>
                         }
+
+                        @if (user.Id != userStateService.loggedInUserId)
+                        {
+                            <MudDivider Class="my-2" />
+                            <MudButton Color="Color.Error" Variant="Variant.Text" OnClick="() => OpenReportUserDialog(user.Id, user.Username)">Report User</MudButton>
+
+                            @if (_canAssignRoles)
+                            {
+                                <MudButton Color="Color.Primary" Variant="Variant.Text" OnClick="() => OpenAssignRolesDialog(user.Id, user.Username)">Manage Roles</MudButton>
+                            }
+                            @if (_canTimeoutUsers)
+                            {
+                                <MudButton Color="Color.Warning" Variant="Variant.Text" OnClick="() => OpenTimeoutDialog(user.Id, user.Username)">Timeout User</MudButton>
+                            }
+                            @if (_canBanUsers)
+                            {
+                                <MudButton Color="Color.Error" Variant="Variant.Text" OnClick="() => OpenBanDialog(user.Id, user.Username)">Ban User</MudButton>
+                            }
+                        }
                     </MudPopover>
                 }
             </MudPaper>
@@ -61,6 +88,9 @@
     private int? selectedUserId = null;
     private bool selectedUserIsFriend = false;
     private bool selectedUserHasPendingRequest = false;
+    private bool _canAssignRoles = false;
+    private bool _canTimeoutUsers = false;
+    private bool _canBanUsers = false;
 
     private async Task SelectUser(int? userId)
     {
@@ -88,11 +118,74 @@
         StateHasChanged();
     }
 
+    private async Task OpenReportUserDialog(int reportedUserId, string reportedUsername)
+    {
+        var parameters = new DialogParameters
+        {
+            { "ReportedUserId", reportedUserId },
+            { "ReportedUsername", reportedUsername }
+        };
+
+        await DialogService.ShowAsync<ReportUserDialog>("Report User", parameters);
+
+        // Close the popover
+        selectedUserId = null;
+        StateHasChanged();
+    }
+
+    private async Task OpenAssignRolesDialog(int targetUserId, string targetUsername)
+    {
+        var parameters = new DialogParameters
+        {
+            { "TargetUserId", targetUserId },
+            { "TargetUsername", targetUsername },
+            { "ServerId", serverId }
+        };
+
+        await DialogService.ShowAsync<AssignRolesDialog>($"Manage Roles for {targetUsername}", parameters);
+
+        // Close the popover
+        selectedUserId = null;
+        StateHasChanged();
+    }
+
+    private async Task OpenTimeoutDialog(int targetUserId, string targetUsername)
+    {
+        var parameters = new DialogParameters
+        {
+            { "TargetUserId", targetUserId },
+            { "TargetUsername", targetUsername },
+            { "ServerId", serverId }
+        };
+        await DialogService.ShowAsync<TimeoutUserDialog>($"Timeout {targetUsername}", parameters);
+        selectedUserId = null;
+        StateHasChanged();
+    }
+
+    private async Task OpenBanDialog(int targetUserId, string targetUsername)
+    {
+        var parameters = new DialogParameters
+        {
+            { "TargetUserId", targetUserId },
+            { "TargetUsername", targetUsername }
+        };
+        await DialogService.ShowAsync<BanUserDialog>($"Ban {targetUsername}", parameters);
+        selectedUserId = null;
+        StateHasChanged();
+    }
+
     protected override async Task OnInitializedAsync()
     {
         serverId = (int)userStateService.selectedServerId!;
         serverOwnerId = await serverService.GetServerOwnerUserId(serverId);
         serverUsers = await serverService.GetServerUsers(serverId);
+
+        _canAssignRoles = await permissionService.HasServerPermissionAsync(
+            userStateService.loggedInUserId!.Value, serverId, PermissionNames.AssignRoles);
+        _canTimeoutUsers = await permissionService.HasServerPermissionAsync(
+            userStateService.loggedInUserId!.Value, serverId, PermissionNames.TimeoutUser);
+        _canBanUsers = await permissionService.HasServerPermissionAsync(
+            userStateService.loggedInUserId!.Value, serverId, PermissionNames.BanUser);
 
         callbackService.Subscribe(CallbackType.ServerUserUpdated, CallbackIdGenerator.CreateId(CallbackType.ServerUserUpdated, serverId), ServerUsersHaveUpdatedAsync);
     }
