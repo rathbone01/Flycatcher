@@ -114,7 +114,7 @@
     private async Task ServerListUpdated()
     {
         servers = await userService.GetUserServers((int)userStateService.loggedInUserId!);
-        StateHasChanged();
+        await InvokeAsync(StateHasChanged);
     }
 
     private void DrawerToggle()
@@ -129,7 +129,7 @@
             return;
 
         await serverService.CreateServer(serverName, (int)userStateService.loggedInUserId!);
-        StateHasChanged();
+        await InvokeAsync(StateHasChanged);
     }
 
     public async Task<string?> ShowServerCreationDialog()
@@ -150,7 +150,7 @@
         userStateService.selectedChannelId = null;
         userStateService.selectedFriendChat = null;
         _drawerOpen = false;
-        StateHasChanged();
+        await InvokeAsync(StateHasChanged);
     }
 
     private void StartDm(int friendId)
@@ -177,7 +177,7 @@
             return;
 
         currentBan = await userBanService.GetUserBanAsync(userStateService.loggedInUserId.Value);
-        StateHasChanged();
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task OnAppealReviewed()
@@ -199,7 +199,7 @@
             currentBan = await userBanService.GetUserBanAsync(userStateService.loggedInUserId.Value);
         }
 
-        StateHasChanged();
+        await InvokeAsync(StateHasChanged);
     }
 
     private void Logout()

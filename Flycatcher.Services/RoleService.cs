@@ -11,17 +11,20 @@ namespace Flycatcher.Services
         private readonly IQueryableRepository<Role> roleRepository;
         private readonly IQueryableRepository<RolePermissions> rolePermissionsRepository;
         private readonly IQueryableRepository<UserRole> userRoleRepository;
+        private readonly IQueryableRepository<ChannelRolePermission> channelRolePermissionRepository;
         private readonly CallbackService callbackService;
 
         public RoleService(
             IQueryableRepository<Role> roleRepository,
             IQueryableRepository<RolePermissions> rolePermissionsRepository,
             IQueryableRepository<UserRole> userRoleRepository,
+            IQueryableRepository<ChannelRolePermission> channelRolePermissionRepository,
             CallbackService callbackService)
         {
             this.roleRepository = roleRepository;
             this.rolePermissionsRepository = rolePermissionsRepository;
             this.userRoleRepository = userRoleRepository;
+            this.channelRolePermissionRepository = channelRolePermissionRepository;
             this.callbackService = callbackService;
         }
 
@@ -166,6 +169,9 @@ namespace Flycatcher.Services
 
             // Delete all UserRole assignments for this role
             await userRoleRepository.ExecuteDelete(ur => ur.RoleId == roleId);
+
+            // Delete all ChannelRolePermission overrides for this role (no cascade from Role FK)
+            await channelRolePermissionRepository.ExecuteDelete(crp => crp.RoleId == roleId);
 
             // Delete the role itself (permissions will cascade delete)
             await roleRepository.Delete(role);

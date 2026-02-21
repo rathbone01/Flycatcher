@@ -116,7 +116,7 @@ namespace Flycatcher.DataAccess
                 .HasOne(crp => crp.Role)
                 .WithMany(r => r.ChannelRolePermissions)
                 .HasForeignKey(crp => crp.RoleId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.NoAction);
 
             modelBuilder.Entity<ChannelRolePermission>()
                 .HasIndex(crp => new { crp.ChannelId, crp.RoleId })

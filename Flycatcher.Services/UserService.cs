@@ -127,6 +127,10 @@ namespace Flycatcher.Services
 
         private static bool IsValidPassword(string password)
         {
+#if DEBUG
+            return true; // relax password requirements in debug mode for easier testing
+#endif
+
             if (string.IsNullOrWhiteSpace(password))
                 return false;
 

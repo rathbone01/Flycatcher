@@ -61,17 +61,20 @@
                             <MudDivider Class="my-2" />
                             <MudButton Color="Color.Error" Variant="Variant.Text" OnClick="() => OpenReportUserDialog(user.Id, user.Username)">Report User</MudButton>
 
-                            @if (_canAssignRoles)
+                            @if (user.Id != serverOwnerId)
                             {
-                                <MudButton Color="Color.Primary" Variant="Variant.Text" OnClick="() => OpenAssignRolesDialog(user.Id, user.Username)">Manage Roles</MudButton>
-                            }
-                            @if (_canTimeoutUsers)
-                            {
-                                <MudButton Color="Color.Warning" Variant="Variant.Text" OnClick="() => OpenTimeoutDialog(user.Id, user.Username)">Timeout User</MudButton>
-                            }
-                            @if (_canBanUsers)
-                            {
-                                <MudButton Color="Color.Error" Variant="Variant.Text" OnClick="() => OpenBanDialog(user.Id, user.Username)">Ban User</MudButton>
+                                @if (_canAssignRoles)
+                                {
+                                    <MudButton Color="Color.Primary" Variant="Variant.Text" OnClick="() => OpenAssignRolesDialog(user.Id, user.Username)">Manage Roles</MudButton>
+                                }
+                                @if (_canTimeoutUsers)
+                                {
+                                    <MudButton Color="Color.Warning" Variant="Variant.Text" OnClick="() => OpenTimeoutDialog(user.Id, user.Username)">Timeout User</MudButton>
+                                }
+                                @if (_canBanUsers)
+                                {
+                                    <MudButton Color="Color.Error" Variant="Variant.Text" OnClick="() => OpenBanDialog(user.Id, user.Username)">Ban User</MudButton>
+                                }
                             }
                         }
                     </MudPopover>
